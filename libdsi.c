@@ -925,21 +925,6 @@ double dsi_get_pixel_height(dsi_camera_t *dsi) {
 	return dsi->pixel_size_y;
 }
 
-int dsi_get_image(dsi_camera_t *dsi, unsigned char **buffer, size_t *size) {
-	switch (dsi->imaging_state) {
-		case DSI_IMAGE_IDLE:
-			dsicmd_set_exposure_time(dsi, dsi->exposure_time);
-			dsicmd_start_exposure(dsi);
-			break;
-
-		case DSI_IMAGE_EXPOSING:
-			break;
-
-		default:
-			break;
-	}
-	return 0;
-}
 
 double dsi_get_temperature(dsi_camera_t *dsi) {
 	int raw_temp = dsicmd_get_temperature(dsi);
@@ -1506,11 +1491,11 @@ dsi_camera_t *dsi_open(const char *identifier) {
 	dsicmd_init_usb_device(dsi);
 	dsicmd_init_dsi(dsi);
 
-	dsi_start_image(dsi, 0.1);
+	dsi_start_exposure(dsi, 0.1);
 	dsi_read_image(dsi, 0, 0);
-	dsi_start_image(dsi, 0.1);
+	dsi_start_exposure(dsi, 0.1);
 	dsi_read_image(dsi, 0, 0);
-	dsi_start_image(dsi, 0.1);
+	dsi_start_exposure(dsi, 0.1);
 	dsi_read_image(dsi, 0, 0);
 
 	return dsi;
@@ -1568,7 +1553,7 @@ int dsi_get_verbose(dsi_camera_t *dsi) {
 	return dsi->log_commands;
 }
 
-int dsi_start_image(dsi_camera_t *dsi, double exptime) {
+int dsi_start_exposure(dsi_camera_t *dsi, double exptime) {
 	int gain, offset;
 	int exposure_ticks = 10000 * exptime;
 

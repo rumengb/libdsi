@@ -201,7 +201,7 @@ const char *dsi_get_serial_number(dsi_camera_t *dsi);
 const char *dsi_get_camera_name(dsi_camera_t *dsi);
 const char *dsi_set_camera_name(dsi_camera_t *dsi, const char *name);
 
-int dsi_start_image(dsi_camera_t *dsi, double exptime);
+int dsi_start_exposure(dsi_camera_t *dsi, double exptime);
 int dsi_read_image(dsi_camera_t *dsi, unsigned int **buffer, int flags);
 int dsi_get_image_width(dsi_camera_t *dsi);
 int dsi_get_image_height(dsi_camera_t *dsi);

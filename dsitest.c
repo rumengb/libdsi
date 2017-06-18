@@ -84,7 +84,7 @@ main(int argc, char **argv)
 
 
 		fprintf(stderr, "Starting exposure...\n");
-		dsi_start_image(dsi, EXP_TIME);
+		dsi_start_exposure(dsi, EXP_TIME);
 		fprintf(stderr, "Reading image...\n");
 		while ((code = dsi_read_image(dsi, &image, O_NONBLOCK)) != 0) {
 			if (code == EWOULDBLOCK) {
@@ -94,7 +94,7 @@ main(int argc, char **argv)
 				dsicmd_abort_exposure(dsi);
 				dsicmd_reset_camera(dsi);
 				dsicmd_reset_camera(dsi);
-				dsi_start_image(dsi, EXP_TIME);
+				dsi_start_exposure(dsi, EXP_TIME);
 			}
 		}
 		snprintf(buffer, 1024, "%s.%04d.pgm", FILE_NAME, i);
