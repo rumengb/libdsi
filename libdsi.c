@@ -21,7 +21,6 @@
 #include <ctype.h>
 #include "dsi.h"
 
-#define MILLISEC 2
 
 int dsicmd_usb_command(dsi_camera_t *dsi, unsigned char *ibuf, int ibuf_len, int obuf_len);
 
@@ -52,10 +51,10 @@ struct DSI_CAMERA {
     int amp_gain_pct;
     int amp_offset_pct;
 
-    char chip_name[32];
-    char camera_name[32];
-    char model_name[32];
-    char serial_number[32];
+    char chip_name[DSI_NAME_LEN];
+    char camera_name[DSI_NAME_LEN];
+    char model_name[DSI_NAME_LEN];
+    char serial_number[DSI_NAME_LEN];
 
     enum DSI_FW_DEBUG fw_debug;
     enum DSI_USB_SPEED usb_speed;
@@ -1059,20 +1058,20 @@ dsi_get_chip_name(dsi_camera_t *dsi) {
 const char *
 dsi_get_model_name(dsi_camera_t *dsi) {
     if (dsi->model_name[0] == 0) {
-        memset(dsi->chip_name, 0, 21);
+        memset(dsi->chip_name, 0, DSI_NAME_LEN);
         dsi_get_chip_name(dsi);
-        if (!strncmp(dsi->chip_name, "ICX254AL", 32)) {
-            strncpy(dsi->model_name, "DSI Pro", 32);
-        } else if (!strncmp(dsi->chip_name, "ICX429ALL", 32)) {
-            strncpy(dsi->model_name, "DSI Pro II", 32);
-        } else if (!strncmp(dsi->chip_name, "ICX429AKL", 32)) {
-            strncpy(dsi->model_name, "DSI Color II", 32);
-        } else if (!strncmp(dsi->chip_name, "ICX404AK", 32)) {
-            strncpy(dsi->model_name, "DSI Color", 32);
-        } else if (!strncmp(dsi->chip_name, "ICX285AL", 32)) {
-           strncpy(dsi->model_name, "DSI Pro III", 32);
+        if (!strncmp(dsi->chip_name, "ICX254AL", DSI_NAME_LEN)) {
+            strncpy(dsi->model_name, "DSI Pro", DSI_NAME_LEN);
+        } else if (!strncmp(dsi->chip_name, "ICX429ALL", DSI_NAME_LEN)) {
+            strncpy(dsi->model_name, "DSI Pro II", DSI_NAME_LEN);
+        } else if (!strncmp(dsi->chip_name, "ICX429AKL", DSI_NAME_LEN)) {
+            strncpy(dsi->model_name, "DSI Color II", DSI_NAME_LEN);
+        } else if (!strncmp(dsi->chip_name, "ICX404AK", DSI_NAME_LEN)) {
+            strncpy(dsi->model_name, "DSI Color", DSI_NAME_LEN);
+        } else if (!strncmp(dsi->chip_name, "ICX285AL", DSI_NAME_LEN)) {
+           strncpy(dsi->model_name, "DSI Pro III", DSI_NAME_LEN);
         } else {
-           strncpy(dsi->model_name, "DSI Unknown", 32);
+           strncpy(dsi->model_name, "DSI Unknown", DSI_NAME_LEN);
         }
     }
     return dsi->model_name;
@@ -1082,7 +1081,7 @@ dsi_get_model_name(dsi_camera_t *dsi) {
 const char *
 dsi_get_camera_name(dsi_camera_t *dsi) {
     if (dsi->camera_name[0] == 0) {
-        memset(dsi->camera_name, 0, 0x21);
+        memset(dsi->camera_name, 0, DSI_NAME_LEN);
         dsicmd_get_eeprom_string(dsi, dsi->camera_name, 0x1c, 0x20);
     }
     return dsi->camera_name;
@@ -1099,9 +1098,9 @@ dsi_get_camera_name(dsi_camera_t *dsi) {
 const char *
 dsi_set_camera_name(dsi_camera_t *dsi, const char *name) {
     if (dsi->camera_name[0] == 0) {
-        memset(dsi->camera_name, 0, 0x21);
+        memset(dsi->camera_name, 0, DSI_NAME_LEN);
     }
-    strncpy(dsi->camera_name, name, 0x20);
+    strncpy(dsi->camera_name, name, DSI_NAME_LEN);
     dsicmd_set_eeprom_string(dsi, dsi->camera_name, 0x1c, 0x20);
     return dsi->camera_name;
 }
@@ -1433,6 +1432,29 @@ int dsi_get_identifier(libusb_device *device, char *identifier) {
 }
 
 
+int dsi_scan(dsi_device_list devices) {
+	struct libusb_device **list = NULL;
+    struct libusb_device_descriptor desc;
+	char dev_id[20];
+	int index = 0;
+
+	int cnt = libusb_get_device_list(NULL, &list);
+
+	for (int i = 0; i < cnt; ++i) {
+		if (!libusb_get_device_descriptor(list[i], &desc)) {
+			if ((desc.idVendor == 0x156c) && (desc.idProduct = 0x0101)) {
+				dsi_get_identifier(list[i], dev_id);
+				strncpy(devices[index], dev_id, DSI_ID_LEN);
+				index++;
+				if (index >= DSI_MAX_DEVICES) break;
+			}
+		}
+	}
+	libusb_free_device_list(list, 0);
+	return index;
+}
+
+
 /**
  * Open a DSI camera using the named device, or the first DSI device found if
  * the name is null.
@@ -1451,7 +1473,7 @@ dsi_open(const char *identifier) {
     dsi_camera_t *dsi = NULL;
 	char dev_id[20];
 
-    int retcode;
+    //int retcode;
 
 	int cnt = libusb_get_device_list(NULL, &list);
 
@@ -1460,8 +1482,7 @@ dsi_open(const char *identifier) {
 			if ((desc.idVendor == 0x156c) && (desc.idProduct = 0x0101)) {
 				dev = list[i];
 				dsi_get_identifier(dev, dev_id);
-				printf("IDENTIFIER: %s %s\n", dev_id, identifier);
-				if (!strcmp(dev_id, identifier)) {
+				if (!strncmp(dev_id, identifier, DSI_ID_LEN)) {
 					if (libusb_open(dev, &handle)) {
 						dev = NULL;
 					}
@@ -1785,8 +1806,8 @@ dsitst_open(const char *chip_name) {
     dsi->fw_debug  = DSI_FW_DEBUG_OFF;
     dsi->usb_speed = DSI_USB_SPEED_HIGH;
 
-    strncpy(dsi->chip_name, chip_name, 32);
-    strncpy(dsi->serial_number, "0123456789abcdef", 32);
+    strncpy(dsi->chip_name, chip_name, DSI_NAME_LEN);
+    strncpy(dsi->serial_number, "0123456789abcdef", DSI_NAME_LEN);
 
     dsicmd_init_dsi(dsi);
 

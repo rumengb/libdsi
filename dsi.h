@@ -11,6 +11,12 @@ struct DSI_CAMERA;
 
 typedef struct DSI_CAMERA dsi_camera_t;
 
+#define DSI_ID_LEN 32
+#define DSI_NAME_LEN 32
+#define DSI_MAX_DEVICES 32
+
+typedef char dsi_device_list[DSI_MAX_DEVICES][DSI_ID_LEN];
+
 /**
  * DSI Command code mnemonics.
  *
@@ -175,6 +181,8 @@ enum DSI_FLUSH_MODE {
 
 void libdsi_set_verbose_init(int on);
 int libdsi_get_verbose_init();
+
+int dsi_scan(dsi_device_list devices);
 
 dsi_camera_t *dsi_open(const char *identifier);
 void dsi_close(dsi_camera_t *dsi);

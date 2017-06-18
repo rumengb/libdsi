@@ -17,8 +17,10 @@
 
 #include "dsi.h"
 
-#define EXP_TIME 900
+#define EXP_TIME 5
 #define FILE_NAME "XXXX"
+
+dsi_device_list devices = {0};
 
 int
 main(int argc, char **argv)
@@ -27,13 +29,20 @@ main(int argc, char **argv)
     int i, exposure_ticks;
     #define SCRATCH_LENGTH 100
     char scratch[SCRATCH_LENGTH];
-    char *device = &argv[1];
 
 	dsi_inint();
+
+	int num_cams = dsi_scan(devices);
+
+	printf("Cameras found: %d\n", num_cams);
+	for (i = 0; i< num_cams; i++) {
+		printf("Camera: %d  ID: %s\n", num_cams, devices[i]);
+	}
+
     libdsi_set_verbose_init((0));
-    dsi = dsi_open(argv[1]);
+    dsi = dsi_open(devices[0]);
     if (dsi == 0) {
-        fprintf(stderr, "failed to open DSI device %s\n", argv[1]);
+        fprintf(stderr, "failed to open DSI device %s\n", devices[0]);
         exit(1);
     }
 
