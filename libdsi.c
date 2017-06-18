@@ -1423,10 +1423,8 @@ int dsi_get_identifier(libusb_device *device, char *identifier) {
 		for (int i = 0; i <= n; i++) sprintf(identifier + 2 * i, "%02X", data[i]);
 	} else {
 		identifier[0] = '\0';
-		printf("ERROR\n");
 		return n;
 	}
-	printf("ID = %s\n", identifier);
 	return LIBUSB_SUCCESS;
 }
 
@@ -1686,8 +1684,8 @@ int dsi_read_image(dsi_camera_t *dsi, unsigned int **buffer, int flags) {
 	if (dsi->log_commands)
 		dsi_log_command_info(dsi, 1, "r 86", read_size_even, dsi->read_buffer_even, 0);
 	if (status < 0) {
-		fprintf(stderr, "libusb_bulk_transfer(%p, 0x86, %p, %d, %d) (even) -> returned %d\n",
-				dsi->handle, dsi->read_buffer_even, read_size_even, 2*dsi->read_image_timeout, status);
+		//fprintf(stderr, "libusb_bulk_transfer(%p, 0x86, %p, %d, %d) (even) -> returned %d\n",
+		//		dsi->handle, dsi->read_buffer_even, read_size_even, 2*dsi->read_image_timeout, status);
 		dsi->imaging_state = DSI_IMAGE_IDLE;
 		return EIO;
 	}
@@ -1698,8 +1696,8 @@ int dsi_read_image(dsi_camera_t *dsi, unsigned int **buffer, int flags) {
 	if (dsi->log_commands)
 		dsi_log_command_info(dsi, 1, "r 86", read_size_odd, dsi->read_buffer_odd, 0);
 	if (status < 0) {
-		fprintf(stderr, "libusb_bulk_transfer(%p, 0x86, %p, %d, %d) (odd) -> returned %d\n",
-				dsi->handle, dsi->read_buffer_odd, read_size_odd, 2*dsi->read_image_timeout, status);
+		//fprintf(stderr, "libusb_bulk_transfer(%p, 0x86, %p, %d, %d) (odd) -> returned %d\n",
+		//		dsi->handle, dsi->read_buffer_odd, read_size_odd, 2*dsi->read_image_timeout, status);
 		dsi->imaging_state = DSI_IMAGE_IDLE;
 		return EIO;
 	}
