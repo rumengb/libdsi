@@ -1,11 +1,7 @@
 /*
- * Copyright (c) 2009, Roland Roberts <roland@astrofoto.org>
- *
+ * Copyright (c) 2017, Rumen G.Bogdanovski <rumen@skyarchive.org>
+ * Based on the code by Roland Roberts <roland@astrofoto.org>
  */
-
-#ifdef HAVE_CONFIG_H
-#  include "config.h"
-#endif
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -20,9 +16,6 @@
 #include <string.h>
 #include <ctype.h>
 #include "dsi.h"
-
-
-int dsicmd_usb_command(dsi_camera_t *dsi, unsigned char *ibuf, int ibuf_len, int obuf_len);
 
 static int verbose_init = 0;
 
@@ -47,6 +40,9 @@ struct DSI_CAMERA {
     int image_offset_y;
     int is_color;
     int is_binnable;
+
+	double pixel_size_x;
+	double pixel_size_y;
 
     int amp_gain_pct;
     int amp_offset_pct;
@@ -1240,12 +1236,15 @@ dsicmd_init_dsi(dsi_camera_t *dsi) {
         dsi->read_height_odd  = 252;
 
         dsi->image_width      = 508;
-        dsi->image_height     = 489;
+        dsi->image_height     = 488;
         dsi->image_offset_x   = 23;
         dsi->image_offset_y   = 13;
 
         dsi->is_binnable      = 0;
         dsi->is_color         = 0;
+
+		dsi->pixel_size_x     = 9.6;
+        dsi->pixel_size_y     = 7.5;
 
     } else if (strcmp(dsi->chip_name, "ICX404AK") == 0) {
         /* DSI Color I.
@@ -1262,11 +1261,15 @@ dsicmd_init_dsi(dsi_camera_t *dsi) {
         dsi->read_height_odd  = 252;
 
         dsi->image_width      = 508;
-        dsi->image_height     = 489;
+        dsi->image_height     = 488;
         dsi->image_offset_x   = 23;
         dsi->image_offset_y   = 17;
         dsi->is_binnable      = 0;
         dsi->is_color         = 1;
+
+		dsi->pixel_size_x     = 9.6;
+        dsi->pixel_size_y     = 7.5;
+
 
     } else if (strncmp(dsi->chip_name, "ICX429", 6) == 0) {
         /* DSI Pro/Color II.
@@ -1288,6 +1291,9 @@ dsicmd_init_dsi(dsi_camera_t *dsi) {
         dsi->image_offset_x   = 30;     /* In bytes, not pixels */
         dsi->image_offset_y   = 13;     /* In rows. */
 
+		dsi->pixel_size_x     = 8.6;
+		dsi->pixel_size_y     = 8.3;
+
         if (strcmp(dsi->chip_name, "ICX429AKL") == 0)
             dsi->is_color = 1;
         else /* ICX429ALL */
@@ -1298,6 +1304,26 @@ dsicmd_init_dsi(dsi_camera_t *dsi) {
         dsicmd_command_2(dsi, SET_ROW_COUNT_ODD,  dsi->read_height_odd);
         dsicmd_command_2(dsi, AD_WRITE,  88);
         dsicmd_command_2(dsi, AD_WRITE, 704);
+
+	} else if (strncmp(dsi->chip_name, "ICX285AL", 8) == 0) {
+	    /* DSI Pro III.
+	     * Sony reports the following information:
+	     * Effective pixels: 1360 x 1024
+	     * Total pixels:     1434 x 1050
+	     */
+
+		dsi->is_color         = 0;
+	    dsi->read_width       = 1434;
+    	dsi->read_height_even = 0;
+	    dsi->read_height_odd  = 1050;
+
+	    dsi->image_width      = 1360;
+	    dsi->image_height     = 1024;
+	    dsi->image_offset_x   = 30;     /* In bytes, not pixels */
+	    dsi->image_offset_y   = 13;     /* In rows. */
+
+		dsi->pixel_size_x     = 6.45;
+		dsi->pixel_size_y     = 6.45;
 
     } else {
         /* Die, camera not supported. */

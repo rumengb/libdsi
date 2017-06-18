@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2009, Roland Roberts <roland@astrofoto.org>
+ * Copyright (c) 2017, Rumen G.Bogdanovski <rumen@skyarchive.org>
+ * Based on the code by Roland Roberts <roland@astrofoto.org>
  */
 
 #ifndef __dsi_h
@@ -254,8 +255,9 @@ int dsicmd_command_2(dsi_camera_t *dsi, dsi_command_t cmd, int );
 int dsicmd_command_3(dsi_camera_t *dsi, dsi_command_t cmd, int, int);
 int dsicmd_command_4(dsi_camera_t *dsi, dsi_command_t cmd, int, int, int);
 
-
 int dsitst_read_image(dsi_camera_t *dsi, const char *filename, int is_binary);
 dsi_camera_t *dsitst_open(const char *chip_name);
+
+int dsicmd_usb_command(dsi_camera_t *dsi, unsigned char *ibuf, int ibuf_len, int obuf_len);
 
 #endif /* __dsi_h */
