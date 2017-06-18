@@ -27,54 +27,54 @@ typedef char dsi_device_list[DSI_MAX_DEVICES][DSI_ID_LEN];
  * CLEAR_TS?).
  */
 enum DSI_COMMAND {
-    PING                   = 0x00,
-    RESET                  = 0x01,
-    ABORT                  = 0x02,
-    TRIGGER                = 0x03,
-    CLEAR_TS               = 0x04,      /* not seen */
-    GET_VERSION            = 0x14,
-    GET_STATUS             = 0x15,
-    GET_TIMESTAMP          = 0x16,
-    GET_EEPROM_LENGTH      = 0x1e,
-    GET_EEPROM_BYTE        = 0x1f,
-    SET_EEPROM_BYTE        = 0x20,
-    GET_GAIN               = 0x32,
-    SET_GAIN               = 0x33,
-    GET_OFFSET             = 0x34,
-    SET_OFFSET             = 0x35,
-    GET_EXP_TIME           = 0x36,
-    SET_EXP_TIME           = 0x37,
-    GET_EXP_MODE           = 0x38,
-    SET_EXP_MODE           = 0x39,
-    GET_VDD_MODE           = 0x3a,
-    SET_VDD_MODE           = 0x3b,
-    GET_FLUSH_MODE         = 0x3c,
-    SET_FLUSH_MODE         = 0x3d,
-    GET_CLEAN_MODE         = 0x3e,      /* not seen */
-    SET_CLEAN_MODE         = 0x3f,      /* not seen */
-    GET_READOUT_SPEED      = 0x40,
-    SET_READOUT_SPEED      = 0x41,
-    GET_READOUT_MODE       = 0x42,
-    SET_READOUT_MODE       = 0x43,
-    GET_READOUT_DELAY      = 0x44,
-    SET_READOUT_DELAY      = 0x45,
-    GET_ROW_COUNT_ODD      = 0x46,      /* not seen, seems to work */
-    SET_ROW_COUNT_ODD      = 0x47,      /* not seen, probably a bad idea! */
-    GET_ROW_COUNT_EVEN     = 0x48,      /* not seen, seems to work */
-    SET_ROW_COUNT_EVEN     = 0x49,      /* not seen, probably a bad idea! */
-    GET_TEMP               = 0x4a,
-    GET_EXP_TIMER_COUNT    = 0x4b,
-    PS_ON                  = 0x64,      /* not seen */
-    PS_OFF                 = 0x65,      /* not seen */
-    CCD_VDD_ON             = 0x66,      /* not seen */
-    CCD_VDD_OFF            = 0x67,      /* not seen */
-    AD_READ                = 0x68,      /* reportedly Envisage does this, when? */
-    AD_WRITE               = 0x69,      /* reportedly Envisage does this, when? */
-    TEST_PATTERN           = 0x6a,      /* not seen */
-    GET_DEBUG_VALUE        = 0x6b,      /* not seen */
-    GET_EEPROM_VIDPID      = 0x6c,      /* not seen */
-    SET_EEPROM_VIDPID      = 0x6d,      /* not seen */
-    ERASE_EEPROM           = 0x6e,      /* not seen */
+	PING                   = 0x00,
+	RESET                  = 0x01,
+	ABORT                  = 0x02,
+	TRIGGER                = 0x03,
+	CLEAR_TS               = 0x04,      /* not seen */
+	GET_VERSION            = 0x14,
+	GET_STATUS             = 0x15,
+	GET_TIMESTAMP          = 0x16,
+	GET_EEPROM_LENGTH      = 0x1e,
+	GET_EEPROM_BYTE        = 0x1f,
+	SET_EEPROM_BYTE        = 0x20,
+	GET_GAIN               = 0x32,
+	SET_GAIN               = 0x33,
+	GET_OFFSET             = 0x34,
+	SET_OFFSET             = 0x35,
+	GET_EXP_TIME           = 0x36,
+	SET_EXP_TIME           = 0x37,
+	GET_EXP_MODE           = 0x38,
+	SET_EXP_MODE           = 0x39,
+	GET_VDD_MODE           = 0x3a,
+	SET_VDD_MODE           = 0x3b,
+	GET_FLUSH_MODE         = 0x3c,
+	SET_FLUSH_MODE         = 0x3d,
+	GET_CLEAN_MODE         = 0x3e,      /* not seen */
+	SET_CLEAN_MODE         = 0x3f,      /* not seen */
+	GET_READOUT_SPEED      = 0x40,
+	SET_READOUT_SPEED      = 0x41,
+	GET_READOUT_MODE       = 0x42,
+	SET_READOUT_MODE       = 0x43,
+	GET_READOUT_DELAY      = 0x44,
+	SET_READOUT_DELAY      = 0x45,
+	GET_ROW_COUNT_ODD      = 0x46,      /* not seen, seems to work */
+	SET_ROW_COUNT_ODD      = 0x47,      /* not seen, probably a bad idea! */
+	GET_ROW_COUNT_EVEN     = 0x48,      /* not seen, seems to work */
+	SET_ROW_COUNT_EVEN     = 0x49,      /* not seen, probably a bad idea! */
+	GET_TEMP               = 0x4a,
+	GET_EXP_TIMER_COUNT    = 0x4b,
+	PS_ON                  = 0x64,      /* not seen */
+	PS_OFF                 = 0x65,      /* not seen */
+	CCD_VDD_ON             = 0x66,      /* not seen */
+	CCD_VDD_OFF            = 0x67,      /* not seen */
+	AD_READ                = 0x68,      /* reportedly Envisage does this, when? */
+	AD_WRITE               = 0x69,      /* reportedly Envisage does this, when? */
+	TEST_PATTERN           = 0x6a,      /* not seen */
+	GET_DEBUG_VALUE        = 0x6b,      /* not seen */
+	GET_EEPROM_VIDPID      = 0x6c,      /* not seen */
+	SET_EEPROM_VIDPID      = 0x6d,      /* not seen */
+	ERASE_EEPROM           = 0x6e,      /* not seen */
 };
 
 typedef enum DSI_COMMAND dsi_command_t;
@@ -87,14 +87,14 @@ typedef enum DSI_COMMAND dsi_command_t;
  * this driver only actually supports DSI_USB_SPEED_HIGH.
  */
 enum DSI_USB_SPEED {
-    DSI_USB_SPEED_FULL = 0,
-    DSI_USB_SPEED_HIGH = 1,
+	DSI_USB_SPEED_FULL = 0,
+	DSI_USB_SPEED_HIGH = 1,
 };
 
 
 enum DSI_FW_DEBUG {
-    DSI_FW_DEBUG_OFF = 0,
-    DSI_FW_DEBUG_ON  = 1,
+	DSI_FW_DEBUG_OFF = 0,
+	DSI_FW_DEBUG_ON  = 1,
 };
 
 /**
@@ -102,9 +102,9 @@ enum DSI_FW_DEBUG {
  * bookkeeping settings.
  */
 enum DSI_IMAGE_STATE {
-    DSI_IMAGE_IDLE     = 0,
-    DSI_IMAGE_EXPOSING = 1,
-    DSI_IMAGE_ABORTING = 2,
+	DSI_IMAGE_IDLE     = 0,
+	DSI_IMAGE_EXPOSING = 1,
+	DSI_IMAGE_ABORTING = 2,
 };
 
 /**
@@ -121,8 +121,8 @@ enum DSI_IMAGE_STATE {
  * above one second.
  */
 enum DSI_READOUT_SPEED {
-    DSI_READOUT_SPEED_LOW  = 0,
-    DSI_READOUT_SPEED_HIGH = 1,
+	DSI_READOUT_SPEED_LOW  = 0,
+	DSI_READOUT_SPEED_HIGH = 1,
 };
 
 /**
@@ -137,10 +137,10 @@ enum DSI_READOUT_SPEED {
  * to one second, but single readout mode for longer exposures.
  */
 enum DSI_READOUT_MODE {
-    DSI_READOUT_MODE_DUAL   = 0,
-    DSI_READOUT_MODE_SINGLE = 1,
-    DSI_READOUT_MODE_ODD    = 2,
-    DSI_READOUT_MODE_EVEN   = 3,
+	DSI_READOUT_MODE_DUAL   = 0,
+	DSI_READOUT_MODE_SINGLE = 1,
+	DSI_READOUT_MODE_ODD    = 2,
+	DSI_READOUT_MODE_EVEN   = 3,
 };
 
 /**
@@ -156,9 +156,9 @@ enum DSI_READOUT_MODE {
  * We have no use cases for turning it off then manually turning it back on.
  */
 enum DSI_VDD_MODE {
-    DSI_VDD_MODE_AUTO = 0,
-    DSI_VDD_MODE_ON   = 1,
-    DSI_VDD_MODE_OFF  = 2,
+	DSI_VDD_MODE_AUTO = 0,
+	DSI_VDD_MODE_ON   = 1,
+	DSI_VDD_MODE_OFF  = 2,
 };
 
 /**
@@ -172,9 +172,9 @@ enum DSI_VDD_MODE {
  * would be appropriate to use different modes.
  */
 enum DSI_FLUSH_MODE {
-    DSI_FLUSH_MODE_CONT   = 0,
-    DSI_FLUSH_MODE_BEFORE = 1,
-    DSI_FLUSH_MODE_NEVER  = 2,
+	DSI_FLUSH_MODE_CONT   = 0,
+	DSI_FLUSH_MODE_BEFORE = 1,
+	DSI_FLUSH_MODE_NEVER  = 2,
 };
 
 #define dsi_inint() libusb_init(NULL)
