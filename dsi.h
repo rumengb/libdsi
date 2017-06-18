@@ -204,6 +204,8 @@ int dsi_start_image(dsi_camera_t *dsi, double exptime);
 int dsi_read_image(dsi_camera_t *dsi, unsigned int **buffer, int flags);
 int dsi_get_image_width(dsi_camera_t *dsi);
 int dsi_get_image_height(dsi_camera_t *dsi);
+double dsi_get_pixel_width(dsi_camera_t *dsi);
+double dsi_get_pixel_height(dsi_camera_t *dsi);
 
 const char *dsicmd_lookup_command_name(dsi_command_t cmd);
 const char *dsicmd_lookup_image_state(enum DSI_IMAGE_STATE);

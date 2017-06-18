@@ -931,8 +931,15 @@ int dsi_get_image_height(dsi_camera_t *dsi) {
 	return dsi->image_height;
 }
 
-int
-dsi_get_image(dsi_camera_t *dsi, unsigned char **buffer, size_t *size) {
+double dsi_get_pixel_width(dsi_camera_t *dsi) {
+	return dsi->pixel_size_x;
+}
+
+double dsi_get_pixel_height(dsi_camera_t *dsi) {
+	return dsi->pixel_size_y;
+}
+
+int dsi_get_image(dsi_camera_t *dsi, unsigned char **buffer, size_t *size) {
 	switch (dsi->imaging_state) {
 		case DSI_IMAGE_IDLE:
 			dsicmd_set_exposure_time(dsi, dsi->exposure_time);

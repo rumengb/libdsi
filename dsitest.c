@@ -68,6 +68,8 @@ main(int argc, char **argv)
 
 	fprintf(stderr, "dsi_get_image_width(dsi)  = %d\n", dsi_get_image_width(dsi));
 	fprintf(stderr, "dsi_get_image_height(dsi) = %d\n", dsi_get_image_height(dsi));
+	fprintf(stderr, "dsi_get_pixel_width(dsi)  = %.2f\n", dsi_get_pixel_width(dsi));
+	fprintf(stderr, "dsi_get_pixel_height(dsi) = %.2f\n", dsi_get_pixel_height(dsi));
 
 	for (i = 0; i < 1; i++) {
 		int j, k, m;
