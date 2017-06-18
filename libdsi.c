@@ -39,6 +39,7 @@ struct DSI_CAMERA {
 	int image_offset_x;
 	int image_offset_y;
 	int is_color;
+	int has_temperature_sensor;
 	int is_binnable;
 
 	double pixel_size_x;
@@ -860,6 +861,7 @@ int dsicmd_get_readout_speed(dsi_camera_t *dsi) {
 }
 
 int dsicmd_get_temperature(dsi_camera_t *dsi) {
+	if (!dsi->has_temperature_sensor) return NO_TEMP_SENSOR;
 	return dsicmd_command_1(dsi, GET_TEMP);
 }
 
@@ -941,6 +943,7 @@ int dsi_get_image(dsi_camera_t *dsi, unsigned char **buffer, size_t *size) {
 
 double dsi_get_temperature(dsi_camera_t *dsi) {
 	int raw_temp = dsicmd_get_temperature(dsi);
+	if (raw_temp == NO_TEMP_SENSOR) return NO_TEMP_SENSOR;
 	return floor((float) raw_temp / 25.6) / 10.0;
 }
 
@@ -1216,6 +1219,7 @@ static dsi_camera_t *dsicmd_init_dsi(dsi_camera_t *dsi) {
 
 		dsi->is_binnable      = 0;
 		dsi->is_color         = 0;
+		dsi->has_temperature_sensor = 0;
 
 		dsi->pixel_size_x     = 9.6;
 		dsi->pixel_size_y     = 7.5;
@@ -1240,6 +1244,7 @@ static dsi_camera_t *dsicmd_init_dsi(dsi_camera_t *dsi) {
 		dsi->image_offset_y   = 17;
 		dsi->is_binnable      = 0;
 		dsi->is_color         = 1;
+		dsi->has_temperature_sensor = 0;
 
 		dsi->pixel_size_x     = 9.6;
 		dsi->pixel_size_y     = 7.5;
@@ -1267,6 +1272,7 @@ static dsi_camera_t *dsicmd_init_dsi(dsi_camera_t *dsi) {
 
 		dsi->pixel_size_x     = 8.6;
 		dsi->pixel_size_y     = 8.3;
+		dsi->has_temperature_sensor = 1;
 
 		if (strcmp(dsi->chip_name, "ICX429AKL") == 0)
 			dsi->is_color = 1;
@@ -1298,6 +1304,7 @@ static dsi_camera_t *dsicmd_init_dsi(dsi_camera_t *dsi) {
 
 		dsi->pixel_size_x     = 6.45;
 		dsi->pixel_size_y     = 6.45;
+		dsi->has_temperature_sensor = 1;
 
 	} else {
 		/* Die, camera not supported. */
