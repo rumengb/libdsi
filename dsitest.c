@@ -17,7 +17,7 @@
 
 #include "dsi.h"
 
-#define EXP_TIME 1
+#define EXP_TIME 900
 #define FILE_NAME "XXXX"
 
 int
@@ -29,6 +29,7 @@ main(int argc, char **argv)
     char scratch[SCRATCH_LENGTH];
     char *device = &argv[1];
 
+	dsi_inint();
     libdsi_set_verbose_init((0));
     dsi = dsi_open(argv[1]);
     if (dsi == 0) {
@@ -98,4 +99,5 @@ main(int argc, char **argv)
         fclose(fptr);
      }
      dsi_close(dsi);
+	 //dsi_exit();
 }

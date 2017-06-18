@@ -9,16 +9,13 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
 #include <errno.h>
 #include <assert.h>
-
 #include <fcntl.h>
-
 #include <sys/types.h>
 #include <sys/time.h>
 #include <regex.h>
-
-#include <usb.h>
 #include <math.h>
 #include <string.h>
 #include <ctype.h>
@@ -31,8 +28,8 @@ int dsicmd_usb_command(dsi_camera_t *dsi, unsigned char *ibuf, int ibuf_len, int
 static int verbose_init = 0;
 
 struct DSI_CAMERA {
-    struct usb_device *device;
-    struct usb_dev_handle *handle;
+    struct libusb_device *device;
+    struct libusb_device_handle *handle;
     unsigned char command_sequence_number;
 
     int is_simulation;
@@ -751,16 +748,15 @@ dsicmd_usb_command(dsi_camera_t *dsi, unsigned char *ibuf, int ibuf_len, int obu
         dsi->last_time = dsi_get_sysclock_ms();
     }
 
-    retcode = usb_bulk_write(dsi->handle, 0x01,
-                             (char *) ibuf, ibuf[0], dsi->write_command_timeout);
+	int actual_length;
+    retcode = libusb_bulk_transfer(dsi->handle, 0x01, (char *) ibuf, ibuf[0], &actual_length, dsi->write_command_timeout);
     if (retcode < 0)
         return retcode;
 
-    retcode = usb_bulk_read(dsi->handle, 0x81, obuf, obuf_size, dsi->read_command_timeout);
+    retcode = libusb_bulk_transfer(dsi->handle, 0x81, obuf, obuf_size, &actual_length, dsi->read_command_timeout);
     if (retcode < 0)
         return retcode;
 
-    assert(obuf[0] == retcode);
     assert((unsigned char) obuf[1] == dsi->command_sequence_number);
     assert(obuf[2] == 6);
 
@@ -1397,11 +1393,11 @@ dsicmd_init_usb_device(dsi_camera_t *dsi) {
      * wire).
      *
      */
-    assert(usb_get_descriptor(dsi->handle, 0x01, 0x00, data, size) >= 0);
-    assert(usb_get_descriptor(dsi->handle, 0x01, 0x00, data, size) >= 0);
-    assert(usb_get_descriptor(dsi->handle, 0x02, 0x00, data, size) >= 0);
-    assert(usb_set_configuration(dsi->handle, 1) >= 0);
-    assert(usb_claim_interface(dsi->handle, 0) >= 0);
+    assert(libusb_get_descriptor(dsi->handle, 0x01, 0x00, data, size) >= 0);
+    assert(libusb_get_descriptor(dsi->handle, 0x01, 0x00, data, size) >= 0);
+    assert(libusb_get_descriptor(dsi->handle, 0x02, 0x00, data, size) >= 0);
+    assert(libusb_set_configuration(dsi->handle, 1) >= 0);
+    assert(libusb_claim_interface(dsi->handle, 0) >= 0);
 
     /* This is included out of desperation, but it works :-|
      *
@@ -1410,14 +1406,32 @@ dsicmd_init_usb_device(dsi_camera_t *dsi) {
      * least, we need to clear this EP.  However, believing in the power of
      * magic, we clear them all.
      */
-    assert(usb_clear_halt(dsi->handle, 0x01) >= 0);
-    assert(usb_clear_halt(dsi->handle, 0x81) >= 0);
-    assert(usb_clear_halt(dsi->handle, 0x86) >= 0);
+    assert(libusb_clear_halt(dsi->handle, 0x01) >= 0);
+    assert(libusb_clear_halt(dsi->handle, 0x81) >= 0);
+    assert(libusb_clear_halt(dsi->handle, 0x86) >= 0);
 
-    assert(usb_clear_halt(dsi->handle, 0x02) >= 0);
-    assert(usb_clear_halt(dsi->handle, 0x04) >= 0);
-    assert(usb_clear_halt(dsi->handle, 0x88) >= 0);
+    assert(libusb_clear_halt(dsi->handle, 0x02) >= 0);
+    assert(libusb_clear_halt(dsi->handle, 0x04) >= 0);
+    assert(libusb_clear_halt(dsi->handle, 0x88) >= 0);
 }
+
+
+int dsi_get_identifier(libusb_device *device, char *identifier) {
+	char data[11];
+	data[0]=libusb_get_bus_number(device);
+	/* port munbers will fit in data[] as max(n)=7 */
+	int n = libusb_get_port_numbers(device, &data[1], 10);
+	if (n != LIBUSB_ERROR_OVERFLOW) {
+		for (int i = 0; i <= n; i++) sprintf(identifier + 2 * i, "%02X", data[i]);
+	} else {
+		identifier[0] = '\0';
+		printf("ERROR\n");
+		return n;
+	}
+	printf("ID = %s\n", identifier);
+	return LIBUSB_SUCCESS;
+}
+
 
 /**
  * Open a DSI camera using the named device, or the first DSI device found if
@@ -1429,58 +1443,36 @@ dsicmd_init_usb_device(dsi_camera_t *dsi) {
  * control the camera.
  */
 dsi_camera_t *
-dsi_open(const char *name) {
-    struct usb_bus *bus;
-    struct usb_device *dev;
-    struct usb_dev_handle *handle = 0;
-    dsi_camera_t *dsi = 0;
+dsi_open(const char *identifier) {
+    struct libusb_device *dev;
+    struct libusb_device_handle *handle = NULL;
+	struct libusb_device **list = NULL;
+    struct libusb_device_descriptor desc;
+    dsi_camera_t *dsi = NULL;
+	char dev_id[20];
 
-    char bus_name[4], dev_name[4];
-    int bus_num, dev_num;
     int retcode;
 
-    /* If a name was supplied, parse it so we can try to match against DSI
-     * devices we find on the USB bus(es). */
-    if (name != 0) {
-        int count;
-        count = sscanf(name, "usb:%d,%d", &bus_num, &dev_num);
-        if (count == 0)
-            return 0;
+	int cnt = libusb_get_device_list(NULL, &list);
 
-        sprintf(bus_name, "%03d", bus_num);
-        sprintf(dev_name, "%03d", dev_num);
-    }
-
-    usb_init();
-    usb_find_busses();
-    usb_find_devices();
-
-    /* All DSI devices appear to present as the same USB vendor:device values.
-     * There does not seem to be any better way to find the device other than
-     * to iterate over and find the match.  Fortunately, this is fast. */
-    for (bus = usb_get_busses(); bus != 0; bus = bus->next) {
-        if ((name != 0) && (!strcmp(bus->dirname, bus_name) == 0)) {
-            continue;
+	for (int i = 0; i < cnt; ++i) {
+		if (!libusb_get_device_descriptor(list[i], &desc)) {
+			if ((desc.idVendor == 0x156c) && (desc.idProduct = 0x0101)) {
+				dev = list[i];
+				dsi_get_identifier(dev, dev_id);
+				printf("IDENTIFIER: %s %s\n", dev_id, identifier);
+				if (!strcmp(dev_id, identifier)) {
+					if (libusb_open(dev, &handle)) {
+						dev = NULL;
+					}
+					break;
+				}
+			}
+		}
 	}
-        for (dev = bus->devices; dev != 0; dev = dev->next) {
-            if ((name != 0) && (!strcmp(dev->filename, dev_name) == 0))
-                continue;
-            if ((  (dev->descriptor.idVendor = 0x156c))
-                && (dev->descriptor.idProduct == 0x0101)) {
-                if (verbose_init = 0)
-                    fprintf(stderr, "Found device %04x:%04x at usb:%s,%s\n",
-                            dev->descriptor.idVendor, dev->descriptor.idProduct,
-                            bus->dirname, dev->filename);
-                handle = usb_open(dev);
-            }
-            break;
-        }
-        if (handle != 0)
-            break;
-    }
+	libusb_free_device_list(list, 0);
 
-    if (handle == 0)
-        return 0;
+    if (handle == NULL) return NULL;
 
     dsi = calloc(1, sizeof(dsi_camera_t));
     assert(dsi != 0);
@@ -1504,8 +1496,12 @@ dsi_open(const char *name) {
 
 void
 dsi_close(dsi_camera_t *dsi) {
-    assert(usb_release_interface(dsi->handle, 0) >= 0);
-    assert(usb_close(dsi->handle) >= 0);
+    assert(libusb_release_interface(dsi->handle, 0) >= 0);
+	libusb_close(dsi->handle);
+	if (dsi->read_buffer_odd) free(dsi->read_buffer_odd);
+	if (dsi->read_buffer_even) free(dsi->read_buffer_even);
+    if (dsi->image_buffer) free(dsi->image_buffer);
+	free(dsi);
 }
 
 
@@ -1672,25 +1668,26 @@ dsi_read_image(dsi_camera_t *dsi, unsigned int **buffer, int flags) {
         */
     }
 
+	int actual_length;
     read_size_even = dsi->read_bpp * dsi->read_width * dsi->read_height_even;
-    status = usb_bulk_read(dsi->handle, 0x86, dsi->read_buffer_even, read_size_even,
+    status = libusb_bulk_transfer(dsi->handle, 0x86, dsi->read_buffer_even, read_size_even, &actual_length,
                            3 * dsi->read_image_timeout);
     if (dsi->log_commands)
         dsi_log_command_info(dsi, 1, "r 86", read_size_even, dsi->read_buffer_even, 0);
     if (status < 0) {
-        fprintf(stderr, "usb_bulk_read(%p, 0x86, %p, %d, %d) (even) -> returned %d\n",
+        fprintf(stderr, "libusb_bulk_transfer(%p, 0x86, %p, %d, %d) (even) -> returned %d\n",
                 dsi->handle, dsi->read_buffer_even, read_size_even, 2*dsi->read_image_timeout, status);
         dsi->imaging_state = DSI_IMAGE_IDLE;
         return EIO;
     }
 
     read_size_odd = dsi->read_bpp * dsi->read_width * dsi->read_height_odd;
-    status = usb_bulk_read(dsi->handle, 0x86, dsi->read_buffer_odd, read_size_odd,
+    status = libusb_bulk_transfer(dsi->handle, 0x86, dsi->read_buffer_odd, read_size_odd, &actual_length,
                            3 * dsi->read_image_timeout);
     if (dsi->log_commands)
         dsi_log_command_info(dsi, 1, "r 86", read_size_odd, dsi->read_buffer_odd, 0);
     if (status < 0) {
-        fprintf(stderr, "usb_bulk_read(%p, 0x86, %p, %d, %d) (odd) -> returned %d\n",
+        fprintf(stderr, "libusb_bulk_transfer(%p, 0x86, %p, %d, %d) (odd) -> returned %d\n",
                 dsi->handle, dsi->read_buffer_odd, read_size_odd, 2*dsi->read_image_timeout, status);
         dsi->imaging_state = DSI_IMAGE_IDLE;
         return EIO;

@@ -5,6 +5,8 @@
 #ifndef __dsi_h
 #define __dsi_h
 
+#include <libusb.h>
+
 struct DSI_CAMERA;
 
 typedef struct DSI_CAMERA dsi_camera_t;
@@ -168,10 +170,13 @@ enum DSI_FLUSH_MODE {
     DSI_FLUSH_MODE_NEVER  = 2,
 };
 
+#define dsi_inint() libusb_init(NULL)
+#define dsi_exit() libusb_exit(NULL)
+
 void libdsi_set_verbose_init(int on);
 int libdsi_get_verbose_init();
 
-dsi_camera_t *dsi_open(const char *name);
+dsi_camera_t *dsi_open(const char *identifier);
 void dsi_close(dsi_camera_t *dsi);
 
 void dsi_set_verbose(dsi_camera_t *dsi, int on);
