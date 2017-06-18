@@ -943,8 +943,8 @@ int dsi_get_image(dsi_camera_t *dsi, unsigned char **buffer, size_t *size) {
 
 double dsi_get_temperature(dsi_camera_t *dsi) {
 	int raw_temp = dsicmd_get_temperature(dsi);
-	if (raw_temp == NO_TEMP_SENSOR) return NO_TEMP_SENSOR;
-	return floor((float) raw_temp / 25.6) / 10.0;
+	if (raw_temp == NO_TEMP_SENSOR) return (double)NO_TEMP_SENSOR;
+	return floor((double) raw_temp / 25.6) / 10.0;
 }
 
 unsigned char dsicmd_get_eeprom_byte(dsi_camera_t *dsi, int offset) {
