@@ -92,8 +92,7 @@ struct DSI_CAMERA {
  *
  * @return Pointer to buffer containing the mnemonic.
  */
-const char *
-dsicmd_lookup_command_name_r(dsi_command_t cmd, char *buffer, int bufsize) {
+const char *dsicmd_lookup_command_name_r(dsi_command_t cmd, char *buffer, int bufsize) {
 	const char *bufptr = 0;
 
 	switch(cmd) {
@@ -257,8 +256,7 @@ dsicmd_lookup_command_name_r(dsi_command_t cmd, char *buffer, int bufsize) {
  *
  * @return Pointer to buffer containing the mnemonic.
  */
-const char *
-dsicmd_lookup_command_name(dsi_command_t cmd) {
+const char *dsicmd_lookup_command_name(dsi_command_t cmd) {
 	static char scratch[100];
 	return dsicmd_lookup_command_name_r(cmd, scratch, 100);
 }
@@ -273,8 +271,7 @@ dsicmd_lookup_command_name(dsi_command_t cmd) {
  *
  * @return Pointer to buffer containing the mnemonic.
  */
-const char *
-dsicmd_lookup_image_state_r(enum DSI_IMAGE_STATE state, char *buffer, int bufsize) {
+const char *dsicmd_lookup_image_state_r(enum DSI_IMAGE_STATE state, char *buffer, int bufsize) {
 	char *bufptr = 0;
 
 	switch(state) {
@@ -304,8 +301,7 @@ dsicmd_lookup_image_state_r(enum DSI_IMAGE_STATE state, char *buffer, int bufsiz
  *
  * @return Pointer to buffer containing the mnemonic.
  */
-const char *
-dsicmd_lookup_image_state(enum DSI_IMAGE_STATE state) {
+const char *dsicmd_lookup_image_state(enum DSI_IMAGE_STATE state) {
 	/* not thread safe. */
 	static char unknown[100];
 	return dsicmd_lookup_image_state_r(state, unknown, 100);
@@ -320,8 +316,7 @@ dsicmd_lookup_image_state(enum DSI_IMAGE_STATE state) {
  *
  * @return Pointer to buffer containing the mnemonic.
  */
-const char *
-dsicmd_lookup_usb_speed_r(enum DSI_USB_SPEED speed, char *buffer, int bufsize) {
+const char *dsicmd_lookup_usb_speed_r(enum DSI_USB_SPEED speed, char *buffer, int bufsize) {
 	char *bufptr = 0;
 	switch(speed) {
 		case DSI_USB_SPEED_FULL:
@@ -346,8 +341,7 @@ dsicmd_lookup_usb_speed_r(enum DSI_USB_SPEED speed, char *buffer, int bufsize) {
  *
  * @return Pointer to buffer containing the mnemonic.
  */
-const char *
-dsicmd_lookup_usb_speed(enum DSI_USB_SPEED speed) {
+const char *dsicmd_lookup_usb_speed(enum DSI_USB_SPEED speed) {
 	/* not thread safe. */
 	static char unknown[100];
 	return dsicmd_lookup_usb_speed_r(speed, unknown, 100);
@@ -359,8 +353,7 @@ dsicmd_lookup_usb_speed(enum DSI_USB_SPEED speed) {
  *
  * @return integer value of system clock in milliseconds.
  */
-static unsigned int
-dsi_get_sysclock_ms() {
+static unsigned int dsi_get_sysclock_ms() {
 	struct timeval tv;
 	gettimeofday(&tv, 0);
 	return (tv.tv_sec * 1000 + tv.tv_usec/1000);
@@ -377,8 +370,7 @@ dsi_get_sysclock_ms() {
  * @param buffer Buffer sent to/received from DSI.
  * @param result If the command had a return value, this is a pointer to that value.
  */
-static void
-dsi_log_command_info(dsi_camera_t *dsi,
+static void dsi_log_command_info(dsi_camera_t *dsi,
 					  int iswrite, const char *prefix, unsigned int length,
 					  char *buffer, unsigned int *result) {
 	if (!dsi->log_commands)
@@ -427,8 +419,7 @@ dsi_log_command_info(dsi_camera_t *dsi,
  *
  * @return decoded value as an unsigned integer.
  */
-static unsigned int
-dsi_get_byte_result(unsigned char *buffer) {
+static unsigned int dsi_get_byte_result(unsigned char *buffer) {
 	return (unsigned int) buffer[3];
 }
 
@@ -439,8 +430,7 @@ dsi_get_byte_result(unsigned char *buffer) {
  *
  * @return decoded value as an unsigned integer.
  */
-static unsigned int
-dsi_get_short_result(unsigned char *buffer) {
+static unsigned int dsi_get_short_result(unsigned char *buffer) {
 	return (unsigned int) ((buffer[4] << 8) | buffer[3]);
 }
 
@@ -451,8 +441,7 @@ dsi_get_short_result(unsigned char *buffer) {
  *
  * @return decoded value as an unsigned integer.
  */
-static unsigned int
-dsi_get_int_result(unsigned char *buffer) {
+static unsigned int dsi_get_int_result(unsigned char *buffer) {
 	unsigned int result;
 	result =                 buffer[6];
 	result = (result << 8) | buffer[5];
@@ -470,8 +459,7 @@ dsi_get_int_result(unsigned char *buffer) {
  *
  * @return decoded command response.
  */
-int
-dsicmd_command_1(dsi_camera_t *dsi, dsi_command_t cmd) {
+int dsicmd_command_1(dsi_camera_t *dsi, dsi_command_t cmd) {
 	if (dsi->is_simulation) {
 		return 0;
 	}
@@ -525,8 +513,7 @@ dsicmd_command_1(dsi_camera_t *dsi, dsi_command_t cmd) {
  *
  * @return decoded command response.
  */
-int
-dsicmd_command_2(dsi_camera_t *dsi, dsi_command_t cmd, int param) {
+int dsicmd_command_2(dsi_camera_t *dsi, dsi_command_t cmd, int param) {
 	if (dsi->is_simulation) {
 		return 0;
 	}
@@ -577,8 +564,7 @@ dsicmd_command_2(dsi_camera_t *dsi, dsi_command_t cmd, int param) {
  *
  * @return decoded command response.
  */
-int
-dsicmd_command_3(dsi_camera_t *dsi, dsi_command_t cmd, int param, int param_len) {
+int dsicmd_command_3(dsi_camera_t *dsi, dsi_command_t cmd, int param, int param_len) {
 	switch(cmd) {
 		case PING:
 		case RESET:
@@ -651,8 +637,7 @@ dsicmd_command_3(dsi_camera_t *dsi, dsi_command_t cmd, int param, int param_len)
  *
  * @return decoded command response.
  */
-int
-dsicmd_command_4(dsi_camera_t *dsi, dsi_command_t cmd,
+int dsicmd_command_4(dsi_camera_t *dsi, dsi_command_t cmd,
 			  int val, int val_bytes, int ret_bytes) {
 	const size_t size = 0x40;
 	unsigned char buffer[0x40];
@@ -700,8 +685,7 @@ dsicmd_command_4(dsi_camera_t *dsi, dsi_command_t cmd,
  * way.  Similarly, 2-byte responses are treated as 16-bit unsigned integers
  * and are decoded and returned that way.
  */
-int
-dsicmd_usb_command(dsi_camera_t *dsi, unsigned char *ibuf, int ibuf_len, int obuf_len) {
+int dsicmd_usb_command(dsi_camera_t *dsi, unsigned char *ibuf, int ibuf_len, int obuf_len) {
 	/* Yes, there is a conflict here.  Our decoded result is logically
 	 * unsigned, but we need to be able to return negative values to indicate
 	 * errors.  Worse, the GET_VERSION command seems to always return a buffer
@@ -951,7 +935,6 @@ int dsi_get_image(dsi_camera_t *dsi, unsigned char **buffer, size_t *size) {
 
 		default:
 			break;
-
 	}
 	return 0;
 }
@@ -961,8 +944,7 @@ double dsi_get_temperature(dsi_camera_t *dsi) {
 	return floor((float) raw_temp / 25.6) / 10.0;
 }
 
-unsigned char
-dsicmd_get_eeprom_byte(dsi_camera_t *dsi, int offset) {
+unsigned char dsicmd_get_eeprom_byte(dsi_camera_t *dsi, int offset) {
 	if (dsi->eeprom_length < 0) {
 		dsi->eeprom_length = dsicmd_command_1(dsi, GET_EEPROM_LENGTH);
 	}
@@ -971,8 +953,7 @@ dsicmd_get_eeprom_byte(dsi_camera_t *dsi, int offset) {
 	return dsicmd_command_2(dsi, GET_EEPROM_BYTE, offset);
 }
 
-unsigned char
-dsicmd_set_eeprom_byte(dsi_camera_t *dsi, char byte, int offset) {
+unsigned char dsicmd_set_eeprom_byte(dsi_camera_t *dsi, char byte, int offset) {
 	if (dsi->eeprom_length < 0) {
 		dsi->eeprom_length = dsicmd_command_1(dsi, GET_EEPROM_LENGTH);
 	}
@@ -981,8 +962,7 @@ dsicmd_set_eeprom_byte(dsi_camera_t *dsi, char byte, int offset) {
 	return dsicmd_command_2(dsi, SET_EEPROM_BYTE, offset | (byte << 8));
 }
 
-static int
-dsicmd_get_eeprom_data(dsi_camera_t *dsi, char *buffer, int start, int length) {
+static int dsicmd_get_eeprom_data(dsi_camera_t *dsi, char *buffer, int start, int length) {
 	int i;
 	for (i = 0; i < length; i++) {
 		buffer[i] = dsicmd_get_eeprom_byte(dsi, start+i);
@@ -990,8 +970,7 @@ dsicmd_get_eeprom_data(dsi_camera_t *dsi, char *buffer, int start, int length) {
 	return length;
 }
 
-static int
-dsicmd_set_eeprom_data(dsi_camera_t *dsi, char *buffer, int start, int length) {
+static int dsicmd_set_eeprom_data(dsi_camera_t *dsi, char *buffer, int start, int length) {
 	int i;
 	for (i = 0; i < length; i++) {
 		dsicmd_set_eeprom_byte(dsi, buffer[i], start+i);
@@ -999,8 +978,7 @@ dsicmd_set_eeprom_data(dsi_camera_t *dsi, char *buffer, int start, int length) {
 	return length;
 }
 
-static int
-dsicmd_get_eeprom_string(dsi_camera_t *dsi, char *buffer, int start, int length) {
+static int dsicmd_get_eeprom_string(dsi_camera_t *dsi, char *buffer, int start, int length) {
 	int i;
 	dsicmd_get_eeprom_data(dsi, buffer, start, length);
 	if ((buffer[0] == 0xff) || (buffer[1] == 0xff) || (buffer[2] == 0xff)) {
@@ -1028,8 +1006,7 @@ dsicmd_get_eeprom_string(dsi_camera_t *dsi, char *buffer, int start, int length)
  *
  * @return
  */
-static int
-dsicmd_set_eeprom_string(dsi_camera_t *dsi, char *buffer, int start, int length) {
+static int dsicmd_set_eeprom_string(dsi_camera_t *dsi, char *buffer, int start, int length) {
 	int i, j, n;
 	char *scratch;
 	/* The buffer is assumed to be a normal null-terminated C-string and has
@@ -1049,8 +1026,7 @@ dsicmd_set_eeprom_string(dsi_camera_t *dsi, char *buffer, int start, int length)
 	free(scratch);
 }
 
-const char *
-dsi_get_chip_name(dsi_camera_t *dsi) {
+const char *dsi_get_chip_name(dsi_camera_t *dsi) {
 	if (dsi->chip_name[0] == 0) {
 		memset(dsi->chip_name, 0, 21);
 		dsicmd_get_eeprom_string(dsi, dsi->chip_name, 8, 20);
@@ -1058,8 +1034,7 @@ dsi_get_chip_name(dsi_camera_t *dsi) {
 	return dsi->chip_name;
 }
 
-const char *
-dsi_get_model_name(dsi_camera_t *dsi) {
+const char *dsi_get_model_name(dsi_camera_t *dsi) {
 	if (dsi->model_name[0] == 0) {
 		memset(dsi->chip_name, 0, DSI_NAME_LEN);
 		dsi_get_chip_name(dsi);
@@ -1081,8 +1056,7 @@ dsi_get_model_name(dsi_camera_t *dsi) {
 }
 
 
-const char *
-dsi_get_camera_name(dsi_camera_t *dsi) {
+const char *dsi_get_camera_name(dsi_camera_t *dsi) {
 	if (dsi->camera_name[0] == 0) {
 		memset(dsi->camera_name, 0, DSI_NAME_LEN);
 		dsicmd_get_eeprom_string(dsi, dsi->camera_name, 0x1c, 0x20);
@@ -1098,8 +1072,7 @@ dsi_get_camera_name(dsi_camera_t *dsi) {
  *
  * @return
  */
-const char *
-dsi_set_camera_name(dsi_camera_t *dsi, const char *name) {
+const char *dsi_set_camera_name(dsi_camera_t *dsi, const char *name) {
 	if (dsi->camera_name[0] == 0) {
 		memset(dsi->camera_name, 0, DSI_NAME_LEN);
 	}
@@ -1108,8 +1081,7 @@ dsi_set_camera_name(dsi_camera_t *dsi, const char *name) {
 	return dsi->camera_name;
 }
 
-const char *
-dsi_get_serial_number(dsi_camera_t *dsi) {
+const char *dsi_get_serial_number(dsi_camera_t *dsi) {
 	if (dsi->serial_number[0] == 0) {
 		int i;
 		char temp[10];
@@ -1121,8 +1093,7 @@ dsi_get_serial_number(dsi_camera_t *dsi) {
 	return dsi->serial_number;
 }
 
-int
-dsicmd_get_version(dsi_camera_t *dsi) {
+int dsicmd_get_version(dsi_camera_t *dsi) {
 	if (dsi->version.value == -1) {
 		unsigned int value = dsicmd_command_1(dsi, GET_VERSION);
 		dsi->version.c.family   = 0xff & (value);
@@ -1136,8 +1107,7 @@ dsicmd_get_version(dsi_camera_t *dsi) {
 	return dsi->version.value;
 }
 
-static int
-dsicmd_load_status(dsi_camera_t *dsi) {
+static int dsicmd_load_status(dsi_camera_t *dsi) {
 	if ((dsi->usb_speed == -1) || (dsi->fw_debug == -1)) {
 		int result = dsicmd_command_1(dsi, GET_STATUS);
 		int usb_speed = (result & 0x0ff);
@@ -1153,14 +1123,12 @@ dsicmd_load_status(dsi_camera_t *dsi) {
 	}
 }
 
-int
-dsicmd_get_usb_speed(dsi_camera_t *dsi) {
+int dsicmd_get_usb_speed(dsi_camera_t *dsi) {
 	dsicmd_load_status(dsi);
 	return dsi->usb_speed;
 }
 
-int
-dsicmd_get_firmware_debug(dsi_camera_t *dsi) {
+int dsicmd_get_firmware_debug(dsi_camera_t *dsi) {
 	dsicmd_load_status(dsi);
 	return dsi->fw_debug;
 }
@@ -1188,8 +1156,7 @@ dsicmd_get_firmware_debug(dsi_camera_t *dsi) {
  *
  * @return
  */
-static dsi_camera_t *
-dsicmd_init_dsi(dsi_camera_t *dsi) {
+static dsi_camera_t *dsicmd_init_dsi(dsi_camera_t *dsi) {
 	dsi->command_sequence_number = 0;
 	dsi->eeprom_length    = -1;
 	dsi->log_commands     = verbose_init;
@@ -1383,8 +1350,7 @@ dsicmd_init_dsi(dsi_camera_t *dsi) {
  *
  * @return
  */
-static int
-dsicmd_init_usb_device(dsi_camera_t *dsi) {
+static int dsicmd_init_usb_device(dsi_camera_t *dsi) {
 	const size_t size = 0x800;
 	unsigned char data[size];
 
@@ -1497,16 +1463,13 @@ int dsi_scan(dsi_device_list devices) {
  * @return a dsi_camera_t handle which should be used for subsequent calls to
  * control the camera.
  */
-dsi_camera_t *
-dsi_open(const char *identifier) {
+dsi_camera_t *dsi_open(const char *identifier) {
 	struct libusb_device *dev;
 	struct libusb_device_handle *handle = NULL;
 	struct libusb_device **list = NULL;
 	struct libusb_device_descriptor desc;
 	dsi_camera_t *dsi = NULL;
 	char dev_id[20];
-
-	//int retcode;
 
 	int cnt = libusb_get_device_list(NULL, &list);
 
@@ -1548,8 +1511,7 @@ dsi_open(const char *identifier) {
 	return dsi;
 }
 
-void
-dsi_close(dsi_camera_t *dsi) {
+void dsi_close(dsi_camera_t *dsi) {
 	assert(libusb_release_interface(dsi->handle, 0) >= 0);
 	libusb_close(dsi->handle);
 	if (dsi->read_buffer_odd) free(dsi->read_buffer_odd);
@@ -1567,8 +1529,7 @@ dsi_close(dsi_camera_t *dsi) {
  *
  * @param on turn on logging if logically true.
  */
-void
-libdsi_set_verbose_init(int on) {
+void libdsi_set_verbose_init(int on) {
 	verbose_init = on;
 }
 
@@ -1577,8 +1538,7 @@ libdsi_set_verbose_init(int on) {
  *
  * @return 0 if logging is off, non-zero for logging on.
  */
-int
-libdsi_get_verbose_init() {
+int libdsi_get_verbose_init() {
 	return verbose_init;
 }
 
@@ -1588,8 +1548,7 @@ libdsi_get_verbose_init() {
  * @param dsi Pointer to an open dsi_camera_t holding state information.
  * @param on turn on logging if logically true.
  */
-void
-dsi_set_verbose(dsi_camera_t *dsi, int on) {
+void dsi_set_verbose(dsi_camera_t *dsi, int on) {
 	dsi->log_commands = on;
 }
 
@@ -1600,13 +1559,11 @@ dsi_set_verbose(dsi_camera_t *dsi, int on) {
  *
  * @return 0 if logging is off, non-zero for logging on.
  */
-int
-dsi_get_verbose(dsi_camera_t *dsi) {
+int dsi_get_verbose(dsi_camera_t *dsi) {
 	return dsi->log_commands;
 }
 
-int
-dsi_start_image(dsi_camera_t *dsi, double exptime) {
+int dsi_start_image(dsi_camera_t *dsi, double exptime) {
 	int gain, offset;
 	int exposure_ticks = 10000 * exptime;
 
@@ -1654,6 +1611,7 @@ dsi_start_image(dsi_camera_t *dsi, double exptime) {
 	dsi->imaging_state = DSI_IMAGE_EXPOSING;
 	return 0;
 }
+
 /**
  * Read an image from the DSI camera.
  *
@@ -1669,8 +1627,7 @@ dsi_start_image(dsi_camera_t *dsi, double exptime) {
  * returns EIO.  If the image is not ready and O_NONBLOCK was specified,
  * returns EWOULDBLOCK.
  */
-int
-dsi_read_image(dsi_camera_t *dsi, unsigned int **buffer, int flags) {
+int dsi_read_image(dsi_camera_t *dsi, unsigned int **buffer, int flags) {
 	int status;
 	int ticks_left, read_size_odd, read_size_even;
 
@@ -1763,8 +1720,7 @@ dsi_read_image(dsi_camera_t *dsi, unsigned int **buffer, int flags) {
 /**
  * Decode the internal image buffer from an already read image.
  */
-const unsigned int *
-dsicmd_decode_image(dsi_camera_t *dsi) {
+const unsigned int *dsicmd_decode_image(dsi_camera_t *dsi) {
 
 	int xpix, ypix, outpos;
 	int is_odd_row, row_start;
@@ -1820,8 +1776,7 @@ dsicmd_decode_image(dsi_camera_t *dsi) {
  *
  * @return pointer to simulated DSI camera.
  */
-dsi_camera_t *
-dsitst_open(const char *chip_name) {
+dsi_camera_t * dsitst_open(const char *chip_name) {
 	dsi_camera_t *dsi = calloc(1, sizeof(dsi_camera_t));
 
 	dsi->is_simulation = 1;
@@ -1902,8 +1857,7 @@ dsitst_open(const char *chip_name) {
  *
  * @return
  */
-int
-dsitst_read_image(dsi_camera_t *dsi, const char *filename, int is_binary) {
+int dsitst_read_image(dsi_camera_t *dsi, const char *filename, int is_binary) {
 	FILE *fptr = 0;
 	int status = 0;
 
