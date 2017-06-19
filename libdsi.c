@@ -1418,11 +1418,12 @@ static void dsicmd_init_usb_device(dsi_camera_t *dsi) {
 
 int dsi_get_identifier(libusb_device *device, char *identifier) {
 	char data[11];
+	int i;
 	data[0]=libusb_get_bus_number(device);
 	/* port munbers will fit in data[] as max(n)=7 */
 	int n = libusb_get_port_numbers(device, &data[1], 10);
 	if (n != LIBUSB_ERROR_OVERFLOW) {
-		for (int i = 0; i <= n; i++) sprintf(identifier + 2 * i, "%02X", data[i]);
+		for (i = 0; i <= n; i++) sprintf(identifier + 2 * i, "%02X", data[i]);
 	} else {
 		identifier[0] = '\0';
 		return n;
@@ -1457,10 +1458,11 @@ int dsi_scan(dsi_device_list devices) {
 	struct libusb_device_descriptor desc;
 	char dev_id[20];
 	int index = 0;
+	int i;
 
   // check for uninitialized cameras
 	int cnt = libusb_get_device_list(NULL, &list);
-	for (int i = 0; i < cnt; ++i) {
+	for (i = 0; i < cnt; ++i) {
 		if (!libusb_get_device_descriptor(list[i], &desc)) {
       if ((desc.idVendor == 0x156c) && (desc.idProduct == 0x0100)) {
         libusb_device_handle *handle;
@@ -1483,7 +1485,7 @@ int dsi_scan(dsi_device_list devices) {
   // check for initialized cameras
   libusb_free_device_list(list, 0);
   cnt = libusb_get_device_list(NULL, &list);
-  for (int i = 0; i < cnt; ++i) {
+  for (i = 0; i < cnt; ++i) {
     if (!libusb_get_device_descriptor(list[i], &desc)) {
       if ((desc.idVendor == 0x156c) && (desc.idProduct == 0x0101)) {
         dsi_get_identifier(list[i], dev_id);
@@ -1514,10 +1516,11 @@ dsi_camera_t *dsi_open(const char *identifier) {
 	struct libusb_device_descriptor desc;
 	dsi_camera_t *dsi = NULL;
 	char dev_id[20];
+	int i;
 
 	int cnt = libusb_get_device_list(NULL, &list);
 
-	for (int i = 0; i < cnt; ++i) {
+	for (i = 0; i < cnt; ++i) {
 		if (!libusb_get_device_descriptor(list[i], &desc)) {
 			if ((desc.idVendor == 0x156c) && (desc.idProduct = 0x0101)) {
 				dev = list[i];
