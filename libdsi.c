@@ -980,7 +980,9 @@ static void dsicmd_get_eeprom_string(dsi_camera_t *dsi, char *buffer, int start,
 	if ((buffer[0] == 0xff) || (buffer[1] == 0xff) || (buffer[2] == 0xff)) {
 		strncpy(buffer, "None", length);
 	} else {
-		strncpy(buffer, buffer+1, length-1);
+    char tmp[DSI_NAME_LEN];
+		strncpy(tmp, buffer+1, length-1);
+    strcpy(buffer, tmp);
 	}
 	for (i = 0; i < length; i++) {
 		if ((unsigned char) buffer[i] == 0xff) {
