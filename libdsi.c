@@ -974,15 +974,14 @@ static int dsicmd_set_eeprom_data(dsi_camera_t *dsi, char *buffer, int start, in
 	return length;
 }
 
-static void dsicmd_get_eeprom_string(dsi_camera_t *dsi, char *buffer, int start, int length) {
+static void dsicmd_get_eeprom_string(dsi_camera_t *dsi, unsigned char *buffer, int start, int length) {
 	int i;
 	dsicmd_get_eeprom_data(dsi, buffer, start, length);
 	if ((buffer[0] == 0xff) || (buffer[1] == 0xff) || (buffer[2] == 0xff)) {
 		strncpy(buffer, "None", length);
 	} else {
-    char tmp[DSI_NAME_LEN];
-		strncpy(tmp, buffer+1, length-1);
-    strcpy(buffer, tmp);
+		for (i = 0; i < length-1; i++) buffer[i] = buffer[i+1];
+		buffer[length-1] = '\0';
 	}
 	for (i = 0; i < length; i++) {
 		if ((unsigned char) buffer[i] == 0xff) {
