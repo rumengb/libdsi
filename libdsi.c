@@ -1519,7 +1519,7 @@ int dsi_scan(dsi_device_list devices) {
  * Open a DSI camera using the named device, or the first DSI device found if
  * the name is null.
  *
- * @param name a name of the form "usb:BUSNO:DEVNO" as in "usb:5:12".
+ * @param identifier as returned by dsi_scan()
  *
  * @return a dsi_camera_t handle which should be used for subsequent calls to
  * control the camera.
@@ -1647,6 +1647,7 @@ int dsi_start_exposure(dsi_camera_t *dsi, double exptime) {
 		offset = dsi->amp_offset_pct - 50;
 		offset = (int)(255 * offset / 50.0);
 	}
+
 	if (dsi->is_interlaced) {
 		dsicmd_set_exposure_time(dsi, exposure_ticks);
 		if (exposure_ticks < 10000) {
