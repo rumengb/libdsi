@@ -28,6 +28,8 @@ main(int argc, char **argv)
 
 	dsi_inint();
 
+	dsi_load_firmware();
+
 	int num_cams = dsi_scan(devices);
 
 	printf("Cameras found: %d\n", num_cams);

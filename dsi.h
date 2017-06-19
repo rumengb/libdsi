@@ -185,6 +185,7 @@ enum DSI_FLUSH_MODE {
 void libdsi_set_verbose_init(int on);
 int libdsi_get_verbose_init();
 
+void dsi_load_firmware();
 int dsi_scan(dsi_device_list devices);
 
 dsi_camera_t *dsi_open(const char *identifier);

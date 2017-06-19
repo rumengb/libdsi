@@ -1434,24 +1434,56 @@ int dsi_get_identifier(libusb_device *device, char *identifier) {
 extern unsigned char FIRMWARE[];
 
 static int write_fw(libusb_device_handle *handle) {
-  unsigned char *pnt = FIRMWARE;
-  int address;
-  int length;
-  unsigned char cpuStop = 0x01;
-  unsigned char cpuStart = 0x00;
-  int rc = libusb_control_transfer(handle, LIBUSB_ENDPOINT_OUT | LIBUSB_REQUEST_TYPE_VENDOR | LIBUSB_RECIPIENT_DEVICE, 0xA0, 0xE600, 0, &cpuStop, 1, 3000);
-  while (rc >= 0 && *pnt) {
-    length = (*pnt++) & 0xFF;
-    address = (*pnt++) & 0xFF;
-    address = address | (((*pnt++) & 0xFF) << 8);
-    rc = libusb_control_transfer(handle, LIBUSB_ENDPOINT_OUT | LIBUSB_REQUEST_TYPE_VENDOR | LIBUSB_RECIPIENT_DEVICE, 0xA0, address, 0, pnt, length, 3000);
-    pnt += length;
-  }
-  if (rc >= 0) {
-    rc = (libusb_control_transfer(handle, LIBUSB_ENDPOINT_OUT | LIBUSB_REQUEST_TYPE_VENDOR | LIBUSB_RECIPIENT_DEVICE, 0xA0, 0xE600, 0, &cpuStart, 1, 3000));
-  }
-  return rc;
+	unsigned char *pnt = FIRMWARE;
+	int address;
+	int length;
+	unsigned char cpuStop = 0x01;
+	unsigned char cpuStart = 0x00;
+	int rc = libusb_control_transfer(handle, LIBUSB_ENDPOINT_OUT | LIBUSB_REQUEST_TYPE_VENDOR | LIBUSB_RECIPIENT_DEVICE, 0xA0, 0xE600, 0, &cpuStop, 1, 3000);
+	while (rc >= 0 && *pnt) {
+		length = (*pnt++) & 0xFF;
+		address = (*pnt++) & 0xFF;
+		address = address | (((*pnt++) & 0xFF) << 8);
+		rc = libusb_control_transfer(handle, LIBUSB_ENDPOINT_OUT | LIBUSB_REQUEST_TYPE_VENDOR | LIBUSB_RECIPIENT_DEVICE, 0xA0, address, 0, pnt, length, 3000);
+		pnt += length;
+	}
+	if (rc >= 0) {
+		rc = (libusb_control_transfer(handle, LIBUSB_ENDPOINT_OUT | LIBUSB_REQUEST_TYPE_VENDOR | LIBUSB_RECIPIENT_DEVICE, 0xA0, 0xE600, 0, &cpuStart, 1, 3000));
+	}
+	return rc;
 }
+
+
+void dsi_load_firmware() {
+	struct libusb_device **list = NULL;
+	struct libusb_device_descriptor desc;
+	int i;
+
+	// check for uninitialized cameras
+	int cnt = libusb_get_device_list(NULL, &list);
+	for (i = 0; i < cnt; ++i) {
+		if (!libusb_get_device_descriptor(list[i], &desc)) {
+			if ((desc.idVendor == 0x156c) && (desc.idProduct == 0x0100)) {
+				libusb_device_handle *handle;
+				int rc = libusb_open(list[i], &handle);
+				if (rc >= 0) {
+					if (libusb_kernel_driver_active(handle, 0) == 1) {
+						rc = libusb_detach_kernel_driver(handle, 0);
+					}
+					if (rc >= 0) {
+						rc = libusb_claim_interface(handle, 0);
+					}
+					rc = write_fw(handle);
+					rc = libusb_release_interface(handle, 0);
+					libusb_close(handle);
+					sleep(3);
+				}
+			}
+		}
+	}
+	libusb_free_device_list(list, 0);
+}
+
 
 int dsi_scan(dsi_device_list devices) {
 	struct libusb_device **list = NULL;
@@ -1460,41 +1492,19 @@ int dsi_scan(dsi_device_list devices) {
 	int index = 0;
 	int i;
 
-  // check for uninitialized cameras
+	// check for initialized cameras
 	int cnt = libusb_get_device_list(NULL, &list);
+
 	for (i = 0; i < cnt; ++i) {
 		if (!libusb_get_device_descriptor(list[i], &desc)) {
-      if ((desc.idVendor == 0x156c) && (desc.idProduct == 0x0100)) {
-        libusb_device_handle *handle;
-        int rc = libusb_open(list[i], &handle);
-        if (rc >= 0) {
-          if (libusb_kernel_driver_active(handle, 0) == 1) {
-            rc = libusb_detach_kernel_driver(handle, 0);
-          }
-          if (rc >= 0) {
-            rc = libusb_claim_interface(handle, 0);
-          }
-          rc = write_fw(handle);
-          rc = libusb_release_interface(handle, 0);
-          libusb_close(handle);
-          sleep(3);
-        }
+			if ((desc.idVendor == 0x156c) && (desc.idProduct == 0x0101)) {
+				dsi_get_identifier(list[i], dev_id);
+				strncpy(devices[index], dev_id, DSI_ID_LEN);
+				index++;
+				if (index >= DSI_MAX_DEVICES) break;
 			}
 		}
 	}
-  // check for initialized cameras
-  libusb_free_device_list(list, 0);
-  cnt = libusb_get_device_list(NULL, &list);
-  for (i = 0; i < cnt; ++i) {
-    if (!libusb_get_device_descriptor(list[i], &desc)) {
-      if ((desc.idVendor == 0x156c) && (desc.idProduct == 0x0101)) {
-        dsi_get_identifier(list[i], dev_id);
-        strncpy(devices[index], dev_id, DSI_ID_LEN);
-        index++;
-        if (index >= DSI_MAX_DEVICES) break;
-      }
-    }
-  }
 	libusb_free_device_list(list, 0);
 	return index;
 }
@@ -2040,4 +2050,3 @@ int dsitst_read_image(dsi_camera_t *dsi, const char *filename, int is_binary) {
 
 	return 0;
 }
-
