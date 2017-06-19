@@ -7,10 +7,10 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		599590491EF8551D00AFC487 /* dsitest.c in Sources */ = {isa = PBXBuildFile; fileRef = 599590471EF8551D00AFC487 /* dsitest.c */; };
-		5995904A1EF8551D00AFC487 /* libdsi.c in Sources */ = {isa = PBXBuildFile; fileRef = 599590481EF8551D00AFC487 /* libdsi.c */; };
-		5995904E1EF855A500AFC487 /* libusb-1.0.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 5995904B1EF855A500AFC487 /* libusb-1.0.a */; };
-		599590501EF85AED00AFC487 /* libdsifw.c in Sources */ = {isa = PBXBuildFile; fileRef = 5995904F1EF85AED00AFC487 /* libdsifw.c */; };
+		5909EE031EF875BC00042D13 /* dsitest.c in Sources */ = {isa = PBXBuildFile; fileRef = 5909EE001EF875BC00042D13 /* dsitest.c */; };
+		5909EE041EF875BC00042D13 /* libdsi.c in Sources */ = {isa = PBXBuildFile; fileRef = 5909EE011EF875BC00042D13 /* libdsi.c */; };
+		5909EE051EF875BC00042D13 /* libdsifw.c in Sources */ = {isa = PBXBuildFile; fileRef = 5909EE021EF875BC00042D13 /* libdsifw.c */; };
+		5909EE071EF875E000042D13 /* libusb-1.0.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 5909EE061EF875E000042D13 /* libusb-1.0.a */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -26,12 +26,12 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		5909EDFF1EF875BC00042D13 /* dsi.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = dsi.h; path = ../dsi.h; sourceTree = "<group>"; };
+		5909EE001EF875BC00042D13 /* dsitest.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = dsitest.c; path = ../dsitest.c; sourceTree = "<group>"; };
+		5909EE011EF875BC00042D13 /* libdsi.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = libdsi.c; path = ../libdsi.c; sourceTree = "<group>"; };
+		5909EE021EF875BC00042D13 /* libdsifw.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = libdsifw.c; path = ../libdsifw.c; sourceTree = "<group>"; };
+		5909EE061EF875E000042D13 /* libusb-1.0.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = "libusb-1.0.a"; path = "../../indigo/build/lib/libusb-1.0.a"; sourceTree = "<group>"; };
 		5995903C1EF854FF00AFC487 /* dsi */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = dsi; sourceTree = BUILT_PRODUCTS_DIR; };
-		599590461EF8551D00AFC487 /* dsi.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = dsi.h; path = ../../dsi.h; sourceTree = "<group>"; };
-		599590471EF8551D00AFC487 /* dsitest.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = dsitest.c; path = ../../dsitest.c; sourceTree = "<group>"; };
-		599590481EF8551D00AFC487 /* libdsi.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = libdsi.c; path = ../../libdsi.c; sourceTree = "<group>"; };
-		5995904B1EF855A500AFC487 /* libusb-1.0.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = "libusb-1.0.a"; path = "../../../indigo/build/lib/libusb-1.0.a"; sourceTree = "<group>"; };
-		5995904F1EF85AED00AFC487 /* libdsifw.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = libdsifw.c; path = ../../libdsifw.c; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -39,7 +39,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				5995904E1EF855A500AFC487 /* libusb-1.0.a in Frameworks */,
+				5909EE071EF875E000042D13 /* libusb-1.0.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -49,7 +49,11 @@
 		599590331EF854FF00AFC487 = {
 			isa = PBXGroup;
 			children = (
-				5995903E1EF854FF00AFC487 /* dsi */,
+				5909EE061EF875E000042D13 /* libusb-1.0.a */,
+				5909EDFF1EF875BC00042D13 /* dsi.h */,
+				5909EE001EF875BC00042D13 /* dsitest.c */,
+				5909EE011EF875BC00042D13 /* libdsi.c */,
+				5909EE021EF875BC00042D13 /* libdsifw.c */,
 				5995903D1EF854FF00AFC487 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -60,18 +64,6 @@
 				5995903C1EF854FF00AFC487 /* dsi */,
 			);
 			name = Products;
-			sourceTree = "<group>";
-		};
-		5995903E1EF854FF00AFC487 /* dsi */ = {
-			isa = PBXGroup;
-			children = (
-				5995904B1EF855A500AFC487 /* libusb-1.0.a */,
-				599590461EF8551D00AFC487 /* dsi.h */,
-				599590471EF8551D00AFC487 /* dsitest.c */,
-				599590481EF8551D00AFC487 /* libdsi.c */,
-				5995904F1EF85AED00AFC487 /* libdsifw.c */,
-			);
-			path = dsi;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -132,9 +124,9 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				599590501EF85AED00AFC487 /* libdsifw.c in Sources */,
-				5995904A1EF8551D00AFC487 /* libdsi.c in Sources */,
-				599590491EF8551D00AFC487 /* dsitest.c in Sources */,
+				5909EE051EF875BC00042D13 /* libdsifw.c in Sources */,
+				5909EE041EF875BC00042D13 /* libdsi.c in Sources */,
+				5909EE031EF875BC00042D13 /* dsitest.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -271,6 +263,7 @@
 				599590451EF854FF00AFC487 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
 	};

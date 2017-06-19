@@ -1443,8 +1443,10 @@ static int write_fw(libusb_device_handle *handle) {
 	while (rc >= 0 && *pnt) {
 		length = (*pnt++) & 0xFF;
 		address = (*pnt++) & 0xFF;
-		address = address | (((*pnt++) & 0xFF) << 8);
+		address = (address  << 8)| ((*pnt++) & 0xFF);
+    pnt++;
 		rc = libusb_control_transfer(handle, LIBUSB_ENDPOINT_OUT | LIBUSB_REQUEST_TYPE_VENDOR | LIBUSB_RECIPIENT_DEVICE, 0xA0, address, 0, pnt, length, 3000);
+    pnt++;
 		pnt += length;
 	}
 	if (rc >= 0) {
