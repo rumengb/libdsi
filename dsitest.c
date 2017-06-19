@@ -3,10 +3,6 @@
  * Copyright (c) 2009, Roland Roberts
  */
 
-#ifdef HAVE_CONFIG_H
-#  include "config.h"
-#endif
-
 #include <stdlib.h>
 #include <getopt.h>
 #include <unistd.h>
@@ -71,22 +67,22 @@ main(int argc, char **argv)
 	fprintf(stderr, "dsi_get_pixel_width(dsi)  = %.2f\n", dsi_get_pixel_width(dsi));
 	fprintf(stderr, "dsi_get_pixel_height(dsi) = %.2f\n", dsi_get_pixel_height(dsi));
 
+	uint16_t *image = (uint16_t*)malloc(dsi_get_image_width(dsi) * dsi_get_image_height(dsi) * 2);
 	for (i = 0; i < 1; i++) {
 		int j, k, m;
 		int code;
 		FILE *fptr;
 		char buffer[1024];
-		unsigned int *image;
+
 		/* This is a low-level approach that needs to be wrapped.  We will
 		   probably want both a synchronous and asynchronous API function.
 		   One idea for the latter will set everything up and verify that the
 		   exposure is running then return ticks remaining. */
 
-
 		fprintf(stderr, "Starting exposure...\n");
 		dsi_start_exposure(dsi, EXP_TIME);
 		fprintf(stderr, "Reading image...\n");
-		while ((code = dsi_read_image(dsi, &image, O_NONBLOCK)) != 0) {
+		while ((code = dsi_read_image(dsi, (unsigned char*)image, O_NONBLOCK)) != 0) {
 			if (code == EWOULDBLOCK) {
 				fprintf(stderr, "image not ready, sleeping...\n");
 				sleep(1);
@@ -97,6 +93,7 @@ main(int argc, char **argv)
 				dsi_start_exposure(dsi, EXP_TIME);
 			}
 		}
+		fprintf(stderr, "saving image...\n");
 		snprintf(buffer, 1024, "%s.%04d.pgm", FILE_NAME, i);
 		fptr = fopen(buffer, "w");
 		fprintf(fptr, "P2\n%d %d\n65535\n", dsi_get_image_width(dsi), dsi_get_image_height(dsi));
@@ -109,6 +106,7 @@ main(int argc, char **argv)
 		}
 		fclose(fptr);
 	 }
+	 free(image);
 	 dsi_close(dsi);
 	 //dsi_exit();
 }

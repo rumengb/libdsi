@@ -203,7 +203,7 @@ const char *dsi_get_camera_name(dsi_camera_t *dsi);
 const char *dsi_set_camera_name(dsi_camera_t *dsi, const char *name);
 
 int dsi_start_exposure(dsi_camera_t *dsi, double exptime);
-int dsi_read_image(dsi_camera_t *dsi, unsigned int **buffer, int flags);
+int dsi_read_image(dsi_camera_t *dsi, unsigned char *buffer, int flags);
 int dsi_get_image_width(dsi_camera_t *dsi);
 int dsi_get_image_height(dsi_camera_t *dsi);
 double dsi_get_pixel_width(dsi_camera_t *dsi);
@@ -223,7 +223,7 @@ int dsicmd_get_exposure_time_left(dsi_camera_t *dsi);
 
 int dsicmd_start_exposure(dsi_camera_t *dsi);
 int dsicmd_abort_exposure(dsi_camera_t *dsi);
-const unsigned int *dsicmd_decode_image(dsi_camera_t *dsi);
+unsigned char *dsicmd_decode_image(dsi_camera_t *dsi, unsigned char *buffer);
 
 int dsicmd_set_gain(dsi_camera_t *dsi, int gain);
 int dsicmd_get_gain(dsi_camera_t *dsi);

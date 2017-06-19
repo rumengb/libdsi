@@ -80,8 +80,6 @@ struct DSI_CAMERA {
 	size_t read_size_odd, read_size_even;
 	unsigned char *read_buffer_odd;
 	unsigned char *read_buffer_even;
-	unsigned int *image_buffer;
-	size_t image_buffer_size;
 };
 
 
@@ -1312,9 +1310,6 @@ static dsi_camera_t *dsicmd_init_dsi(dsi_camera_t *dsi) {
 	dsi->read_buffer_odd  = malloc(dsi->read_size_odd);
 	dsi->read_buffer_even = malloc(dsi->read_size_even);
 
-	dsi->image_buffer_size = 0;
-	dsi->image_buffer      = 0;
-
 	dsi->read_command_timeout  = 1000;    /* milliseconds */
 	dsi->write_command_timeout = 1000;    /* milliseconds */
 	dsi->read_image_timeout   =  5000;    /* milliseconds */
@@ -1511,7 +1506,6 @@ void dsi_close(dsi_camera_t *dsi) {
 	libusb_close(dsi->handle);
 	if (dsi->read_buffer_odd) free(dsi->read_buffer_odd);
 	if (dsi->read_buffer_even) free(dsi->read_buffer_even);
-	if (dsi->image_buffer) free(dsi->image_buffer);
 	free(dsi);
 }
 
@@ -1645,12 +1639,11 @@ int dsi_start_exposure(dsi_camera_t *dsi, double exptime) {
  * returns EIO.  If the image is not ready and O_NONBLOCK was specified,
  * returns EWOULDBLOCK.
  */
-int dsi_read_image(dsi_camera_t *dsi, unsigned int **buffer, int flags) {
+int dsi_read_image(dsi_camera_t *dsi, unsigned char *buffer, int flags) {
 	int status;
 	int ticks_left, read_size_odd, read_size_even;
 
-	if (dsi == 0 || buffer == 0)
-		return EINVAL;
+	if (dsi == NULL || buffer == NULL) return EINVAL;
 
 	/* FIXME: This method should really only be callable if the imager is in a
 	   currently imaging state. */
@@ -1741,19 +1734,13 @@ int dsi_read_image(dsi_camera_t *dsi, unsigned int **buffer, int flags) {
 	}
 
 	dsi->imaging_state = DSI_IMAGE_IDLE;
-	// fprintf(stderr, "image decode started\n");
-	dsicmd_decode_image(dsi);
-	// fprintf(stderr, "image decode completed\n");
-	if (buffer)
-		*buffer = dsi->image_buffer;
-
-	return 0;
+	return (dsicmd_decode_image(dsi, buffer) == NULL) ? EINVAL : 0;
 }
 
 /**
  * Decode the internal image buffer from an already read image.
  */
-const unsigned int *dsicmd_decode_image(dsi_camera_t *dsi) {
+unsigned char *dsicmd_decode_image(dsi_camera_t *dsi, unsigned char *buffer) {
 
 	int xpix, ypix, outpos;
 	int is_odd_row, row_start;
@@ -1761,19 +1748,11 @@ const unsigned int *dsicmd_decode_image(dsi_camera_t *dsi) {
 	/* FIXME: This method should really only be called if the camera is an
 	   post-imaging state. */
 
-	if (dsi->image_buffer == 0) {
-		dsi->image_buffer_size = dsi->read_width * dsi->read_height;
-		dsi->image_buffer = (unsigned int *) calloc(sizeof(unsigned int), dsi->image_buffer_size);
-	} else if (dsi->image_buffer_size < dsi->read_width * dsi->read_height) {
-		dsi->image_buffer_size = dsi->read_width * dsi->read_height;
-		dsi->image_buffer = (unsigned int *) realloc(dsi->image_buffer, sizeof(unsigned int) * dsi->image_buffer_size);
-	}
-	memset(dsi->image_buffer, 0, sizeof(unsigned int) * dsi->image_buffer_size);
+	if (buffer == NULL) return NULL;
 
 	outpos = 0;
 	if (dsi->is_interlaced) {
 		for (ypix = 0; ypix < dsi->image_height; ypix++) {
-			unsigned int msb, lsb;
 			int ixypos;
 			/* The odd-even interlacing means that we advance the row start offset
 			   every other pass through the loop.  It is the same offset on each
@@ -1787,19 +1766,18 @@ const unsigned int *dsicmd_decode_image(dsi_camera_t *dsi) {
 			*/
 			for (xpix = 0; xpix < dsi->image_width; xpix++) {
 				if (is_odd_row) {
-					msb = dsi->read_buffer_odd[ixypos];
-					lsb = dsi->read_buffer_odd[ixypos+1];
+					buffer[outpos+1] = dsi->read_buffer_odd[ixypos];
+					buffer[outpos] = dsi->read_buffer_odd[ixypos+1];
 				} else {
-					msb = dsi->read_buffer_even[ixypos];
-					lsb = dsi->read_buffer_even[ixypos+1];
+					buffer[outpos+1] = dsi->read_buffer_even[ixypos];
+					buffer[outpos] = dsi->read_buffer_even[ixypos+1];
 				}
-				dsi->image_buffer[outpos++] = (msb << 8) | lsb;
+				outpos += 2;
 				ixypos += 2;
 			}
 		}
 	} else { /* Non interlaced -> DSI III*/
 		for (ypix = 0; ypix < dsi->image_height; ypix++) {
-			unsigned int msb, lsb;
 			int ixypos;
 			row_start  = dsi->read_width * (ypix + dsi->image_offset_y);
 			ixypos = 2 * (row_start + dsi->image_offset_x);
@@ -1808,14 +1786,14 @@ const unsigned int *dsicmd_decode_image(dsi_camera_t *dsi) {
 			  ypix, outpos, is_odd_row, row_start, ixypos);
 			*/
 			for (xpix = 0; xpix < dsi->image_width; xpix++) {
-				msb = dsi->read_buffer_odd[ixypos];
-				lsb = dsi->read_buffer_odd[ixypos+1];
-				dsi->image_buffer[outpos++] = (msb << 8) | lsb;
+				buffer[outpos+1] = dsi->read_buffer_odd[ixypos];
+				buffer[outpos] = dsi->read_buffer_odd[ixypos+1];
+				outpos += 2;
 				ixypos += 2;
 			}
 		}
 	}
-	return dsi->image_buffer;
+	return buffer;
 }
 
 /**
