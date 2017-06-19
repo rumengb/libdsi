@@ -13,7 +13,7 @@
 
 #include "dsi.h"
 
-#define EXP_TIME 5
+#define EXP_TIME 0.3
 #define FILE_NAME "XXXX"
 
 dsi_device_list devices = {0};
@@ -43,6 +43,7 @@ main(int argc, char **argv)
 	}
 
 	dsi_set_verbose(dsi, (0));
+	dsi_set_image_little_endian(dsi, 1);
 
 	fprintf(stderr, "dsi_get_camera_name(dsi)    = %s\n", dsi_get_camera_name(dsi));
 	fprintf(stderr, "dsi_get_model_name(dsi)    = %s\n", dsi_get_model_name(dsi));

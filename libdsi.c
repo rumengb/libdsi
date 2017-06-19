@@ -42,6 +42,7 @@ struct DSI_CAMERA {
 	int has_temperature_sensor;
 	int is_binnable;
 	int is_interlaced;
+	int little_endian_data;
 
 	double pixel_size_x;
 	double pixel_size_y;
@@ -880,6 +881,14 @@ int dsicmd_get_row_count_even(dsi_camera_t *dsi) {
 	return dsi->read_height_even;
 }
 
+void dsi_set_image_little_endian(dsi_camera_t *dsi, int little_endian) {
+	if (little_endian) {
+		dsi->little_endian_data = 1;
+	} else {
+		dsi->little_endian_data = 0;
+	}
+}
+
 int dsi_set_amp_gain(dsi_camera_t *dsi, int gain) {
 	if (gain > 100)
 		dsi->amp_gain_pct = 100;
@@ -1154,6 +1163,8 @@ static dsi_camera_t *dsicmd_init_dsi(dsi_camera_t *dsi) {
 	dsi->fw_debug  = -1;
 	dsi->usb_speed = -1;
 
+	dsi->little_endian_data = 1;
+
 	if (!dsi->is_simulation) {
 		dsicmd_command_1(dsi, PING);
 		dsicmd_command_1(dsi, RESET);
@@ -1234,7 +1245,6 @@ static dsi_camera_t *dsicmd_init_dsi(dsi_camera_t *dsi) {
 
 		dsi->pixel_size_x     = 9.6;
 		dsi->pixel_size_y     = 7.5;
-
 
 	} else if (strncmp(dsi->chip_name, "ICX429", 6) == 0) {
 		/* DSI Pro/Color II.
@@ -1764,33 +1774,44 @@ unsigned char *dsicmd_decode_image(dsi_camera_t *dsi, unsigned char *buffer) {
 			  fprintf(stderr, "starting image row %d, outpos=%d, is_odd_row=%d, row_start=%d, ixypos=%d\n",
 			  ypix, outpos, is_odd_row, row_start, ixypos);
 			*/
-			for (xpix = 0; xpix < dsi->image_width; xpix++) {
-				if (is_odd_row) {
-					buffer[outpos+1] = dsi->read_buffer_odd[ixypos];
-					buffer[outpos] = dsi->read_buffer_odd[ixypos+1];
-				} else {
-					buffer[outpos+1] = dsi->read_buffer_even[ixypos];
-					buffer[outpos] = dsi->read_buffer_even[ixypos+1];
+			if (dsi->little_endian_data) {
+				for (xpix = 0; xpix < dsi->image_width; xpix++) {
+					if (is_odd_row) { /* invert bytes as camera givers big endian */
+						buffer[outpos++] = dsi->read_buffer_odd[ixypos+1];
+						buffer[outpos++] = dsi->read_buffer_odd[ixypos];
+					} else {
+						buffer[outpos++] = dsi->read_buffer_even[ixypos+1];
+						buffer[outpos++] = dsi->read_buffer_even[ixypos];
+					}
+					ixypos += 2;
 				}
-				outpos += 2;
-				ixypos += 2;
+			} else { /* just copy data as camera givers big endian */
+				if (is_odd_row) {
+					memcpy(buffer + outpos, dsi->read_buffer_odd + ixypos, dsi->image_width * dsi->read_bpp);
+				} else {
+					memcpy(buffer + outpos, dsi->read_buffer_even + ixypos, dsi->image_width * dsi->read_bpp);
+				}
+				outpos += dsi->image_width * dsi->read_bpp;
 			}
 		}
 	} else { /* Non interlaced -> DSI III*/
-		for (ypix = 0; ypix < dsi->image_height; ypix++) {
-			int ixypos;
-			row_start  = dsi->read_width * (ypix + dsi->image_offset_y);
-			ixypos = 2 * (row_start + dsi->image_offset_x);
-			/*
-			  fprintf(stderr, "starting image row %d, outpos=%d, is_odd_row=%d, row_start=%d, ixypos=%d\n",
-			  ypix, outpos, is_odd_row, row_start, ixypos);
-			*/
-			for (xpix = 0; xpix < dsi->image_width; xpix++) {
-				buffer[outpos+1] = dsi->read_buffer_odd[ixypos];
-				buffer[outpos] = dsi->read_buffer_odd[ixypos+1];
-				outpos += 2;
-				ixypos += 2;
+		if (dsi->little_endian_data) { /* invert bytes as camera givers big endian */
+			for (ypix = 0; ypix < dsi->image_height; ypix++) {
+				int ixypos;
+				row_start  = dsi->read_width * (ypix + dsi->image_offset_y);
+				ixypos = 2 * (row_start + dsi->image_offset_x);
+				/*
+				  fprintf(stderr, "starting image row %d, outpos=%d, is_odd_row=%d, row_start=%d, ixypos=%d\n",
+				  ypix, outpos, is_odd_row, row_start, ixypos);
+				*/
+				for (xpix = 0; xpix < dsi->image_width; xpix++) {
+					buffer[outpos++] = dsi->read_buffer_odd[ixypos+1];
+					buffer[outpos++] = dsi->read_buffer_odd[ixypos];
+					ixypos += 2;
+				}
 			}
+		} else {  /* just copy data as camera givers big endian */
+			memcpy(buffer, dsi->read_buffer_odd, dsi->image_width * dsi->image_height * dsi->read_bpp);
 		}
 	}
 	return buffer;

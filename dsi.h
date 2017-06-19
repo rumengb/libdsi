@@ -203,6 +203,7 @@ const char *dsi_get_camera_name(dsi_camera_t *dsi);
 const char *dsi_set_camera_name(dsi_camera_t *dsi, const char *name);
 
 int dsi_start_exposure(dsi_camera_t *dsi, double exptime);
+void dsi_set_image_little_endian(dsi_camera_t *dsi, int little_endian);
 int dsi_read_image(dsi_camera_t *dsi, unsigned char *buffer, int flags);
 int dsi_get_image_width(dsi_camera_t *dsi);
 int dsi_get_image_height(dsi_camera_t *dsi);
