@@ -17,6 +17,7 @@ typedef struct DSI_CAMERA dsi_camera_t;
 #define DSI_MAX_DEVICES 32
 #define NO_TEMP_SENSOR  99999999
 
+
 typedef char dsi_device_list[DSI_MAX_DEVICES][DSI_ID_LEN];
 
 /**

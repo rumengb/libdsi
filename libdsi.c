@@ -41,6 +41,7 @@ struct DSI_CAMERA {
 	int is_color;
 	int has_temperature_sensor;
 	int is_binnable;
+	int is_interlaced;
 
 	double pixel_size_x;
 	double pixel_size_y;
@@ -1204,6 +1205,7 @@ static dsi_camera_t *dsicmd_init_dsi(dsi_camera_t *dsi) {
 
 		dsi->is_binnable      = 0;
 		dsi->is_color         = 0;
+		dsi->is_interlaced    = 1;
 		dsi->has_temperature_sensor = 0;
 
 		dsi->pixel_size_x     = 9.6;
@@ -1229,6 +1231,7 @@ static dsi_camera_t *dsicmd_init_dsi(dsi_camera_t *dsi) {
 		dsi->image_offset_y   = 17;
 		dsi->is_binnable      = 0;
 		dsi->is_color         = 1;
+		dsi->is_interlaced    = 1;
 		dsi->has_temperature_sensor = 0;
 
 		dsi->pixel_size_x     = 9.6;
@@ -1258,6 +1261,7 @@ static dsi_camera_t *dsicmd_init_dsi(dsi_camera_t *dsi) {
 		dsi->pixel_size_x     = 8.6;
 		dsi->pixel_size_y     = 8.3;
 		dsi->has_temperature_sensor = 1;
+		dsi->is_interlaced    = 1;
 
 		if (strcmp(dsi->chip_name, "ICX429AKL") == 0)
 			dsi->is_color = 1;
@@ -1278,6 +1282,7 @@ static dsi_camera_t *dsicmd_init_dsi(dsi_camera_t *dsi) {
 		 */
 
 		dsi->is_color         = 0;
+		dsi->is_interlaced    = 0;
 		dsi->read_width       = 1434;
 		dsi->read_height_even = 0;
 		dsi->read_height_odd  = 1050;
@@ -1576,28 +1581,51 @@ int dsi_start_exposure(dsi_camera_t *dsi, double exptime) {
 		offset = dsi->amp_offset_pct - 50;
 		offset = 255 * offset / 50;
 	}
-
-	dsicmd_set_exposure_time(dsi, exposure_ticks);
-	if (exposure_ticks < 10000) {
+	if (dsi->is_interlaced) {
+		dsicmd_set_exposure_time(dsi, exposure_ticks);
+		if (exposure_ticks < 10000) {
+			dsicmd_set_readout_speed(dsi, DSI_READOUT_SPEED_HIGH);
+			dsicmd_set_readout_delay(dsi, 3);
+			dsicmd_set_readout_mode(dsi, DSI_READOUT_MODE_DUAL);
+			dsicmd_get_readout_mode(dsi);
+			dsicmd_set_vdd_mode(dsi, DSI_VDD_MODE_ON);
+		} else {
+			dsicmd_set_readout_speed(dsi, DSI_READOUT_SPEED_LOW);
+			dsicmd_set_readout_delay(dsi, 5);
+			dsicmd_set_readout_mode(dsi, DSI_READOUT_MODE_SINGLE);
+			dsicmd_get_readout_mode(dsi);
+			dsicmd_set_vdd_mode(dsi, DSI_VDD_MODE_AUTO);
+		}
+		dsicmd_set_gain(dsi, 63*dsi->amp_gain_pct/100);
+		dsicmd_set_offset(dsi, offset);
+	} else { /* Non interlaced - DSI III */
+		dsicmd_set_gain(dsi, 63*dsi->amp_gain_pct/100);
+		dsicmd_set_offset(dsi, offset);
+		dsicmd_set_exposure_time(dsi, exposure_ticks);
 		dsicmd_set_readout_speed(dsi, DSI_READOUT_SPEED_HIGH);
-		dsicmd_set_readout_delay(dsi, 3);
-		dsicmd_set_readout_mode(dsi, DSI_READOUT_MODE_DUAL);
+		dsicmd_set_readout_delay(dsi, 4);
+		if (exposure_ticks < 10000) {
+			dsicmd_set_readout_mode(dsi, DSI_READOUT_MODE_DUAL);
+			dsicmd_set_vdd_mode(dsi, DSI_VDD_MODE_ON);
+		} else {
+			dsicmd_set_readout_mode(dsi, DSI_READOUT_MODE_SINGLE);
+			dsicmd_set_vdd_mode(dsi, DSI_VDD_MODE_OFF);
+		}
 		dsicmd_get_readout_mode(dsi);
-		dsicmd_set_vdd_mode(dsi, DSI_VDD_MODE_ON);
-	} else {
-		dsicmd_set_readout_speed(dsi, DSI_READOUT_SPEED_LOW);
-		dsicmd_set_readout_delay(dsi, 5);
-		dsicmd_set_readout_mode(dsi, DSI_READOUT_MODE_SINGLE);
-		dsicmd_get_readout_mode(dsi);
-		dsicmd_set_vdd_mode(dsi, DSI_VDD_MODE_AUTO);
+		//FIXME! should take vdd_mode in to account
+		//if ((dsi->vdd_mode) || (dsi->exposure_time < VDD_TRH)) {
+		//	dsicmd_set_vdd_mode(dsi, DSI_VDD_MODE_ON);
+		//} else {
+		//	dsicmd_set_vdd_mode(dsi, DSI_VDD_MODE_OFF);
+		//}
 	}
-	dsicmd_set_gain(dsi, 63*dsi->amp_gain_pct/100);
-	dsicmd_set_offset(dsi, offset);
+
 	dsicmd_set_flush_mode(dsi, DSI_FLUSH_MODE_CONT);
 	dsicmd_get_readout_mode(dsi);
 	dsicmd_get_exposure_time(dsi);
 
 	dsicmd_start_exposure(dsi);
+
 	dsi->imaging_state = DSI_IMAGE_EXPOSING;
 	return 0;
 }
@@ -1670,37 +1698,52 @@ int dsi_read_image(dsi_camera_t *dsi, unsigned int **buffer, int flags) {
 	}
 
 	int actual_length;
-	read_size_even = dsi->read_bpp * dsi->read_width * dsi->read_height_even;
-	status = libusb_bulk_transfer(dsi->handle, 0x86, dsi->read_buffer_even, read_size_even, &actual_length,
-						   3 * dsi->read_image_timeout);
-	if (dsi->log_commands)
-		dsi_log_command_info(dsi, 1, "r 86", read_size_even, dsi->read_buffer_even, 0);
-	if (status < 0) {
-		//fprintf(stderr, "libusb_bulk_transfer(%p, 0x86, %p, %d, %d) (even) -> returned %d\n",
-		//		dsi->handle, dsi->read_buffer_even, read_size_even, 2*dsi->read_image_timeout, status);
-		dsi->imaging_state = DSI_IMAGE_IDLE;
-		return EIO;
-	}
+	if (dsi->is_interlaced) {
+		read_size_even = dsi->read_bpp * dsi->read_width * dsi->read_height_even;
+		status = libusb_bulk_transfer(dsi->handle, 0x86, dsi->read_buffer_even, read_size_even, &actual_length,
+							   3 * dsi->read_image_timeout);
+		if (dsi->log_commands)
+			dsi_log_command_info(dsi, 1, "r 86", read_size_even, dsi->read_buffer_even, 0);
+		if (status < 0) {
+			//fprintf(stderr, "libusb_bulk_transfer(%p, 0x86, %p, %d, %d) (even) -> returned %d\n",
+			//		dsi->handle, dsi->read_buffer_even, read_size_even, 2*dsi->read_image_timeout, status);
+			dsi->imaging_state = DSI_IMAGE_IDLE;
+			return EIO;
+		}
 
-	read_size_odd = dsi->read_bpp * dsi->read_width * dsi->read_height_odd;
-	status = libusb_bulk_transfer(dsi->handle, 0x86, dsi->read_buffer_odd, read_size_odd, &actual_length,
-						   3 * dsi->read_image_timeout);
-	if (dsi->log_commands)
-		dsi_log_command_info(dsi, 1, "r 86", read_size_odd, dsi->read_buffer_odd, 0);
-	if (status < 0) {
-		//fprintf(stderr, "libusb_bulk_transfer(%p, 0x86, %p, %d, %d) (odd) -> returned %d\n",
-		//		dsi->handle, dsi->read_buffer_odd, read_size_odd, 2*dsi->read_image_timeout, status);
-		dsi->imaging_state = DSI_IMAGE_IDLE;
-		return EIO;
+		read_size_odd = dsi->read_bpp * dsi->read_width * dsi->read_height_odd;
+		status = libusb_bulk_transfer(dsi->handle, 0x86, dsi->read_buffer_odd, read_size_odd, &actual_length,
+							   3 * dsi->read_image_timeout);
+		if (dsi->log_commands)
+			dsi_log_command_info(dsi, 1, "r 86", read_size_odd, dsi->read_buffer_odd, 0);
+		if (status < 0) {
+			//fprintf(stderr, "libusb_bulk_transfer(%p, 0x86, %p, %d, %d) (odd) -> returned %d\n",
+			//		dsi->handle, dsi->read_buffer_odd, read_size_odd, 2*dsi->read_image_timeout, status);
+			dsi->imaging_state = DSI_IMAGE_IDLE;
+			return EIO;
+		}
+	} else { /* Non interlaced -> DSI III */
+		int exposure_ticks = dsi->exposure_time * 1000;
+		if (exposure_ticks >= 10000) {
+			dsicmd_set_vdd_mode(dsi, DSI_VDD_MODE_ON);
+		}
+		read_size_odd = dsi->read_bpp * dsi->read_width * dsi->read_height_odd;
+		status = libusb_bulk_transfer(dsi->handle, 0x86, dsi->read_buffer_odd, read_size_odd, &actual_length,
+							   3 * dsi->read_image_timeout);
+		if (dsi->log_commands)
+			dsi_log_command_info(dsi, 1, "r 86", read_size_odd, dsi->read_buffer_odd, 0);
+		if (status < 0) {
+			//fprintf(stderr, "libusb_bulk_transfer(%p, 0x86, %p, %d, %d) (odd) -> returned %d\n",
+			//		dsi->handle, dsi->read_buffer_odd, read_size_odd, 2*dsi->read_image_timeout, status);
+			dsi->imaging_state = DSI_IMAGE_IDLE;
+			return EIO;
+		}
 	}
 
 	dsi->imaging_state = DSI_IMAGE_IDLE;
 	// fprintf(stderr, "image decode started\n");
 	dsicmd_decode_image(dsi);
 	// fprintf(stderr, "image decode completed\n");
-	if (buffer)
-		*buffer = dsi->image_buffer;
-
 	if (buffer)
 		*buffer = dsi->image_buffer;
 
@@ -1723,37 +1766,53 @@ const unsigned int *dsicmd_decode_image(dsi_camera_t *dsi) {
 		dsi->image_buffer = (unsigned int *) calloc(sizeof(unsigned int), dsi->image_buffer_size);
 	} else if (dsi->image_buffer_size < dsi->read_width * dsi->read_height) {
 		dsi->image_buffer_size = dsi->read_width * dsi->read_height;
-		dsi->image_buffer = (unsigned int *) realloc(dsi->image_buffer,
-													 sizeof(unsigned int) * dsi->image_buffer_size);
+		dsi->image_buffer = (unsigned int *) realloc(dsi->image_buffer, sizeof(unsigned int) * dsi->image_buffer_size);
 	}
 	memset(dsi->image_buffer, 0, sizeof(unsigned int) * dsi->image_buffer_size);
 
 	outpos = 0;
-	for (ypix = 0; ypix < dsi->image_height; ypix++) {
-
-		unsigned int msb, lsb;
-		int ixypos;
-		/* The odd-even interlacing means that we advance the row start offset
-		   every other pass through the loop.  It is the same offset on each
-		   of those two passes, but we read from a different buffer. */
-		is_odd_row = (ypix + dsi->image_offset_y) % 2;
-		row_start  = dsi->read_width * ((ypix + dsi->image_offset_y) / 2);
-
-		ixypos = 2 * (row_start + dsi->image_offset_x);
-		/*
-		  fprintf(stderr, "starting image row %d, outpos=%d, is_odd_row=%d, row_start=%d, ixypos=%d\n",
-		  ypix, outpos, is_odd_row, row_start, ixypos);
-		*/
-		for (xpix = 0; xpix < dsi->image_width; xpix++) {
-			if (is_odd_row) {
+	if (dsi->is_interlaced) {
+		for (ypix = 0; ypix < dsi->image_height; ypix++) {
+			unsigned int msb, lsb;
+			int ixypos;
+			/* The odd-even interlacing means that we advance the row start offset
+			   every other pass through the loop.  It is the same offset on each
+			   of those two passes, but we read from a different buffer. */
+			is_odd_row = (ypix + dsi->image_offset_y) % 2;
+			row_start  = dsi->read_width * ((ypix + dsi->image_offset_y) / 2);
+			ixypos = 2 * (row_start + dsi->image_offset_x);
+			/*
+			  fprintf(stderr, "starting image row %d, outpos=%d, is_odd_row=%d, row_start=%d, ixypos=%d\n",
+			  ypix, outpos, is_odd_row, row_start, ixypos);
+			*/
+			for (xpix = 0; xpix < dsi->image_width; xpix++) {
+				if (is_odd_row) {
+					msb = dsi->read_buffer_odd[ixypos];
+					lsb = dsi->read_buffer_odd[ixypos+1];
+				} else {
+					msb = dsi->read_buffer_even[ixypos];
+					lsb = dsi->read_buffer_even[ixypos+1];
+				}
+				dsi->image_buffer[outpos++] = (msb << 8) | lsb;
+				ixypos += 2;
+			}
+		}
+	} else { /* Non interlaced -> DSI III*/
+		for (ypix = 0; ypix < dsi->image_height; ypix++) {
+			unsigned int msb, lsb;
+			int ixypos;
+			row_start  = dsi->read_width * (ypix + dsi->image_offset_y);
+			ixypos = 2 * (row_start + dsi->image_offset_x);
+			/*
+			  fprintf(stderr, "starting image row %d, outpos=%d, is_odd_row=%d, row_start=%d, ixypos=%d\n",
+			  ypix, outpos, is_odd_row, row_start, ixypos);
+			*/
+			for (xpix = 0; xpix < dsi->image_width; xpix++) {
 				msb = dsi->read_buffer_odd[ixypos];
 				lsb = dsi->read_buffer_odd[ixypos+1];
-			} else {
-				msb = dsi->read_buffer_even[ixypos];
-				lsb = dsi->read_buffer_even[ixypos+1];
+				dsi->image_buffer[outpos++] = (msb << 8) | lsb;
+				ixypos += 2;
 			}
-			dsi->image_buffer[outpos++] = (msb << 8) | lsb;
-			ixypos += 2;
 		}
 	}
 	return dsi->image_buffer;
