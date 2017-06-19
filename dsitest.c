@@ -45,6 +45,8 @@ main(int argc, char **argv)
 	}
 
 	dsi_set_verbose(dsi, (0));
+	dsi_set_amp_gain(dsi, 100);
+	dsi_set_amp_offset(dsi, 10);
 	dsi_set_image_little_endian(dsi, 1);
 
 	fprintf(stderr, "dsi_get_camera_name(dsi)    = %s\n", dsi_get_camera_name(dsi));

@@ -227,8 +227,13 @@ int dsicmd_start_exposure(dsi_camera_t *dsi);
 int dsicmd_abort_exposure(dsi_camera_t *dsi);
 unsigned char *dsicmd_decode_image(dsi_camera_t *dsi, unsigned char *buffer);
 
+int dsi_set_amp_gain(dsi_camera_t *dsi, int gain);
+int dsi_get_amp_gain(dsi_camera_t *dsi);
+
 int dsicmd_set_gain(dsi_camera_t *dsi, int gain);
 int dsicmd_get_gain(dsi_camera_t *dsi);
+int dsi_set_amp_offset(dsi_camera_t *dsi, int offset);
+int dsi_get_amp_offset(dsi_camera_t *dsi);
 
 int dsicmd_set_offset(dsi_camera_t *dsi, int offset);
 int dsicmd_get_offset(dsi_camera_t *dsi);

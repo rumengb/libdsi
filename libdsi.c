@@ -899,7 +899,7 @@ int dsi_set_amp_gain(dsi_camera_t *dsi, int gain) {
 	return dsi->amp_gain_pct;
 }
 
-int dsi_get_amp_gain(dsi_camera_t *dsi, int gain) {
+int dsi_get_amp_gain(dsi_camera_t *dsi) {
 	return dsi->amp_gain_pct;
 }
 
@@ -974,6 +974,7 @@ static int dsicmd_set_eeprom_data(dsi_camera_t *dsi, char *buffer, int start, in
 	return length;
 }
 
+
 static void dsicmd_get_eeprom_string(dsi_camera_t *dsi, unsigned char *buffer, int start, int length) {
 	int i;
 	dsicmd_get_eeprom_data(dsi, buffer, start, length);
@@ -984,12 +985,13 @@ static void dsicmd_get_eeprom_string(dsi_camera_t *dsi, unsigned char *buffer, i
 		buffer[length-1] = '\0';
 	}
 	for (i = 0; i < length; i++) {
-		if ((unsigned char) buffer[i] == 0xff) {
-			buffer[i] = 0;
+		if (buffer[i] == 0xff) {
+			buffer[i] = '\0';
 			break;
 		}
 	}
 }
+
 
 /**
  * Write the provided string to a region in the EEPROM.  WARNING: I think it
@@ -1626,7 +1628,7 @@ int dsi_start_exposure(dsi_camera_t *dsi, double exptime) {
 	int gain, offset;
 	int exposure_ticks = 10000 * exptime;
 
-	gain = 63 * dsi->amp_gain_pct / 100;
+	gain = (int)(63 * dsi->amp_gain_pct / 100.0);
 
 	/* FIXME: What is the mapping?
 	 *     20% -> 409 -> 0x199
@@ -1639,11 +1641,11 @@ int dsi_start_exposure(dsi_camera_t *dsi, double exptime) {
 
 	if (dsi->amp_offset_pct < 50) {
 		offset = 50 - dsi->amp_offset_pct;
-		offset = 255 * offset / 50;
+		offset = (int)(255 * offset / 50.0);
 		offset |= 0x100;
 	} else {
 		offset = dsi->amp_offset_pct - 50;
-		offset = 255 * offset / 50;
+		offset = (int)(255 * offset / 50.0);
 	}
 	if (dsi->is_interlaced) {
 		dsicmd_set_exposure_time(dsi, exposure_ticks);
@@ -1660,10 +1662,10 @@ int dsi_start_exposure(dsi_camera_t *dsi, double exptime) {
 			dsicmd_get_readout_mode(dsi);
 			dsicmd_set_vdd_mode(dsi, DSI_VDD_MODE_AUTO);
 		}
-		dsicmd_set_gain(dsi, 63*dsi->amp_gain_pct/100);
+		dsicmd_set_gain(dsi, gain);
 		dsicmd_set_offset(dsi, offset);
 	} else { /* Non interlaced - DSI III */
-		dsicmd_set_gain(dsi, 63*dsi->amp_gain_pct/100);
+		dsicmd_set_gain(dsi, gain);
 		dsicmd_set_offset(dsi, offset);
 		dsicmd_set_exposure_time(dsi, exposure_ticks);
 		dsicmd_set_readout_speed(dsi, DSI_READOUT_SPEED_HIGH);
@@ -1760,6 +1762,8 @@ int dsi_read_image(dsi_camera_t *dsi, unsigned char *buffer, int flags) {
 		*/
 	}
 
+	dsicmd_set_gain(dsi, (int)(63 * dsi->amp_gain_pct / 100.0));
+
 	int actual_length;
 	if (dsi->is_interlaced) {
 		read_size_even = dsi->read_bpp * dsi->read_width * dsi->read_height_even;
@@ -1803,6 +1807,7 @@ int dsi_read_image(dsi_camera_t *dsi, unsigned char *buffer, int flags) {
 		}
 	}
 
+	dsicmd_set_gain(dsi, 0);
 	dsi->imaging_state = DSI_IMAGE_IDLE;
 	return (dsicmd_decode_image(dsi, buffer) == NULL) ? EINVAL : 0;
 }
