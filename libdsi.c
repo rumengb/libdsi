@@ -1052,6 +1052,7 @@ static dsi_camera_t *dsicmd_init_dsi(dsi_camera_t *dsi) {
 	dsi->little_endian_data = 1;
 
 	if (!dsi->is_simulation) {
+		dsicmd_command_1(dsi, RESET);
 		dsicmd_command_1(dsi, PING);
 		dsicmd_command_1(dsi, RESET);
 
@@ -1214,7 +1215,7 @@ static dsi_camera_t *dsicmd_init_dsi(dsi_camera_t *dsi) {
 	dsi->amp_offset_pct =  50;
 
 	dsi->imaging_state = DSI_IMAGE_IDLE;
-
+	dsicmd_command_1(dsi, RESET);
 	return dsi;
 }
 
@@ -1654,6 +1655,7 @@ dsi_camera_t *dsi_open_camera(const char *identifier) {
 }
 
 void dsi_close_camera(dsi_camera_t *dsi) {
+	dsi_reset_camera(dsi);
 	assert(libusb_release_interface(dsi->handle, 0) >= 0);
 	libusb_close(dsi->handle);
 	if (dsi->read_buffer_odd) free(dsi->read_buffer_odd);
@@ -1729,6 +1731,8 @@ int dsi_start_exposure(dsi_camera_t *dsi, double exptime) {
 	}
 
 	if (dsi->is_interlaced) {
+		dsicmd_set_gain(dsi, 0);
+		dsicmd_set_offset(dsi, 0);
 		dsicmd_set_exposure_time(dsi, exposure_ticks);
 		if (exposure_ticks < 10000) {
 			dsicmd_set_readout_speed(dsi, DSI_READOUT_SPEED_HIGH);
