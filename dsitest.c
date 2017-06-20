@@ -13,7 +13,7 @@
 
 #include "libdsi.h"
 
-#define EXP_TIME 0.001
+#define EXP_TIME 0.5
 #define FILE_NAME "XXXX"
 
 dsi_device_list devices = {0};
@@ -75,10 +75,10 @@ main(int argc, char **argv)
 			   exposure is running then return ticks remaining. */
 
 	        for (i = 0; i < 10; i++) {
-				fprintf(stderr, "Starting exposure %.2f...\n", EXP_TIME/(i+1));
-				dsi_set_amp_gain(dsi, i);
-				dsi_set_amp_offset(dsi, 50);
-				dsi_start_exposure(dsi, EXP_TIME);
+				fprintf(stderr, "Starting exposure %.2f...\n", (x*i)/25.0);
+				dsi_set_amp_gain(dsi, i*10);
+				dsi_set_amp_offset(dsi, x*5);
+				dsi_start_exposure(dsi, (x*i)/25.0);
 				fprintf(stderr, "Reading image...\n");
 				while ((code = dsi_read_image(dsi, (unsigned char*)image, O_NONBLOCK)) != 0) {
 					if (code == EWOULDBLOCK) {
