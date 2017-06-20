@@ -13,7 +13,7 @@
 
 #include "libdsi.h"
 
-#define EXP_TIME 1.0
+#define EXP_TIME 0.001
 #define FILE_NAME "XXXX"
 
 dsi_device_list devices = {0};
