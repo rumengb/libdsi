@@ -179,14 +179,14 @@ enum DSI_FLUSH_MODE {
 	DSI_FLUSH_MODE_NEVER  = 2,
 };
 
-#define dsi_inint() libusb_init(NULL)
-#define dsi_exit() libusb_exit(NULL)
+#define libdsi_inint() libusb_init(NULL)
+#define libdsi_exit() libusb_exit(NULL)
 
 void libdsi_set_verbose_init(int on);
 int libdsi_get_verbose_init();
 
 void dsi_load_firmware();
-int dsi_scan(dsi_device_list devices);
+int dsi_scan_usb(dsi_device_list devices);
 
 dsi_camera_t *dsi_open(const char *identifier);
 void dsi_close(dsi_camera_t *dsi);
@@ -196,6 +196,7 @@ int dsi_get_verbose(dsi_camera_t *dsi);
 
 /* No setter; there is no thermal control for the DSI. */
 double dsi_get_temperature(dsi_camera_t *dsi);
+int dsi_get_bytespp(dsi_camera_t *dsi);
 
 const char *dsi_get_chip_name(dsi_camera_t *dsi);
 const char *dsi_get_model_name(dsi_camera_t *dsi);
@@ -204,6 +205,7 @@ const char *dsi_get_camera_name(dsi_camera_t *dsi);
 const char *dsi_set_camera_name(dsi_camera_t *dsi, const char *name);
 
 int dsi_start_exposure(dsi_camera_t *dsi, double exptime);
+int dsi_abort_exposure(dsi_camera_t *dsi);
 void dsi_set_image_little_endian(dsi_camera_t *dsi, int little_endian);
 int dsi_read_image(dsi_camera_t *dsi, unsigned char *buffer, int flags);
 int dsi_get_image_width(dsi_camera_t *dsi);
@@ -211,64 +213,16 @@ int dsi_get_image_height(dsi_camera_t *dsi);
 double dsi_get_pixel_width(dsi_camera_t *dsi);
 double dsi_get_pixel_height(dsi_camera_t *dsi);
 
-const char *dsicmd_lookup_command_name(dsi_command_t cmd);
-const char *dsicmd_lookup_image_state(enum DSI_IMAGE_STATE);
-const char *dsicmd_lookup_usb_speed(enum DSI_USB_SPEED);
-
-int dsicmd_wake_camera(dsi_camera_t *dsi);
-int dsicmd_reset_camera(dsi_camera_t *dsi);
-
-int dsicmd_set_exposure_time(dsi_camera_t *dsi, int howlong);
-int dsicmd_get_exposure_time(dsi_camera_t *dsi);
-
-int dsicmd_get_exposure_time_left(dsi_camera_t *dsi);
-
-int dsicmd_start_exposure(dsi_camera_t *dsi);
-int dsicmd_abort_exposure(dsi_camera_t *dsi);
-unsigned char *dsicmd_decode_image(dsi_camera_t *dsi, unsigned char *buffer);
-
 int dsi_set_amp_gain(dsi_camera_t *dsi, int gain);
 int dsi_get_amp_gain(dsi_camera_t *dsi);
 
-int dsicmd_set_gain(dsi_camera_t *dsi, int gain);
-int dsicmd_get_gain(dsi_camera_t *dsi);
 int dsi_set_amp_offset(dsi_camera_t *dsi, int offset);
 int dsi_get_amp_offset(dsi_camera_t *dsi);
 
-int dsicmd_set_offset(dsi_camera_t *dsi, int offset);
-int dsicmd_get_offset(dsi_camera_t *dsi);
-
-int dsicmd_set_readout_speed(dsi_camera_t *dsi, int speed);
-int dsicmd_get_readout_speed(dsi_camera_t *dsi);
-
-int dsicmd_set_readout_mode(dsi_camera_t *dsi, int mode);
-int dsicmd_get_readout_mode(dsi_camera_t *dsi);
-
-int dsicmd_set_readout_delay(dsi_camera_t *dsi, int delay);
-int dsicmd_get_readout_delay(dsi_camera_t *dsi);
-
-int dsicmd_set_vdd_mode(dsi_camera_t *dsi, int mode);
-int dsicmd_get_vdd_mode(dsi_camera_t *dsi);
-
-int dsicmd_set_flush_mode(dsi_camera_t *dsi, int mode);
-int dsicmd_get_flush_mode(dsi_camera_t *dsi);
-
-int dsicmd_get_row_count_odd(dsi_camera_t *dsi);
-int dsicmd_get_row_count_even(dsi_camera_t *dsi);
+int dsi_reset_camera(dsi_camera_t *dsi);
 
 int dsicmd_get_version(dsi_camera_t *dsi);
-int dsicmd_get_usb_speed(dsi_camera_t *dsi);
-int dsicmd_get_firmware_debug(dsi_camera_t *dsi);
-int dsicmd_get_temperature(dsi_camera_t *dsi);
 
-int dsicmd_command_1(dsi_camera_t *dsi, dsi_command_t cmd);
-int dsicmd_command_2(dsi_camera_t *dsi, dsi_command_t cmd, int );
-int dsicmd_command_3(dsi_camera_t *dsi, dsi_command_t cmd, int, int);
-int dsicmd_command_4(dsi_camera_t *dsi, dsi_command_t cmd, int, int, int);
-
-int dsitst_read_image(dsi_camera_t *dsi, const char *filename, int is_binary);
 dsi_camera_t *dsitst_open(const char *chip_name);
-
-int dsicmd_usb_command(dsi_camera_t *dsi, unsigned char *ibuf, int ibuf_len, int obuf_len);
 
 #endif /* __dsi_h */

@@ -17,6 +17,12 @@
 #include <ctype.h>
 #include "dsi.h"
 
+static int dsicmd_command_1(dsi_camera_t *dsi, dsi_command_t cmd);
+static int dsicmd_command_2(dsi_camera_t *dsi, dsi_command_t cmd, int );
+static int dsicmd_command_3(dsi_camera_t *dsi, dsi_command_t cmd, int, int);
+static int dsicmd_command_4(dsi_camera_t *dsi, dsi_command_t cmd, int, int, int);
+static int dsicmd_usb_command(dsi_camera_t *dsi, unsigned char *ibuf, int ibuf_len, int obuf_len);
+
 static int verbose_init = 0;
 
 struct DSI_CAMERA {
@@ -460,7 +466,7 @@ static unsigned int dsi_get_int_result(unsigned char *buffer) {
  *
  * @return decoded command response.
  */
-int dsicmd_command_1(dsi_camera_t *dsi, dsi_command_t cmd) {
+static int dsicmd_command_1(dsi_camera_t *dsi, dsi_command_t cmd) {
 	if (dsi->is_simulation) {
 		return 0;
 	}
@@ -514,7 +520,7 @@ int dsicmd_command_1(dsi_camera_t *dsi, dsi_command_t cmd) {
  *
  * @return decoded command response.
  */
-int dsicmd_command_2(dsi_camera_t *dsi, dsi_command_t cmd, int param) {
+static int dsicmd_command_2(dsi_camera_t *dsi, dsi_command_t cmd, int param) {
 	if (dsi->is_simulation) {
 		return 0;
 	}
@@ -565,7 +571,7 @@ int dsicmd_command_2(dsi_camera_t *dsi, dsi_command_t cmd, int param) {
  *
  * @return decoded command response.
  */
-int dsicmd_command_3(dsi_camera_t *dsi, dsi_command_t cmd, int param, int param_len) {
+static int dsicmd_command_3(dsi_camera_t *dsi, dsi_command_t cmd, int param, int param_len) {
 	switch(cmd) {
 		case PING:
 		case RESET:
@@ -638,7 +644,7 @@ int dsicmd_command_3(dsi_camera_t *dsi, dsi_command_t cmd, int param, int param_
  *
  * @return decoded command response.
  */
-int dsicmd_command_4(dsi_camera_t *dsi, dsi_command_t cmd,
+static int dsicmd_command_4(dsi_camera_t *dsi, dsi_command_t cmd,
 			  int val, int val_bytes, int ret_bytes) {
 	const size_t size = 0x40;
 	unsigned char buffer[0x40];
@@ -686,7 +692,7 @@ int dsicmd_command_4(dsi_camera_t *dsi, dsi_command_t cmd,
  * way.  Similarly, 2-byte responses are treated as 16-bit unsigned integers
  * and are decoded and returned that way.
  */
-int dsicmd_usb_command(dsi_camera_t *dsi, unsigned char *ibuf, int ibuf_len, int obuf_len) {
+static int dsicmd_usb_command(dsi_camera_t *dsi, unsigned char *ibuf, int ibuf_len, int obuf_len) {
 	/* Yes, there is a conflict here.  Our decoded result is logically
 	 * unsigned, but we need to be able to return negative values to indicate
 	 * errors.  Worse, the GET_VERSION command seems to always return a buffer
@@ -764,108 +770,108 @@ int dsicmd_usb_command(dsi_camera_t *dsi, unsigned char *ibuf, int ibuf_len, int
 	return result;
 }
 
-int dsicmd_wake_camera(dsi_camera_t *dsi) {
+static int dsicmd_wake_camera(dsi_camera_t *dsi) {
 	return dsicmd_command_1(dsi, PING);
 }
 
-int dsicmd_reset_camera(dsi_camera_t *dsi) {
+static int dsicmd_reset_camera(dsi_camera_t *dsi) {
 	return dsicmd_command_1(dsi, RESET);
 }
 
-int dsicmd_set_exposure_time(dsi_camera_t *dsi, int ticks) {
+static int dsicmd_set_exposure_time(dsi_camera_t *dsi, int ticks) {
 	/* FIXME: check time for validity */
 	dsi->exposure_time = ticks;
 	return dsicmd_command_2(dsi, SET_EXP_TIME, ticks);
 }
 
-int dsicmd_get_exposure_time(dsi_camera_t *dsi) {
+static int dsicmd_get_exposure_time(dsi_camera_t *dsi) {
 	return dsicmd_command_1(dsi, GET_EXP_TIME);
 }
 
-int dsicmd_get_exposure_time_left(dsi_camera_t *dsi) {
+static int dsicmd_get_exposure_time_left(dsi_camera_t *dsi) {
 	return dsicmd_command_1(dsi, GET_EXP_TIMER_COUNT);
 }
 
-int dsicmd_start_exposure(dsi_camera_t *dsi) {
+static int dsicmd_start_exposure(dsi_camera_t *dsi) {
 	dsi->imaging_state = DSI_IMAGE_EXPOSING;
 	return dsicmd_command_1(dsi, TRIGGER);
 }
 
-int dsicmd_abort_exposure(dsi_camera_t *dsi) {
+static int dsicmd_abort_exposure(dsi_camera_t *dsi) {
 	dsi->imaging_state = DSI_IMAGE_ABORTING;
 	return dsicmd_command_1(dsi, ABORT);
 }
 
-int dsicmd_set_gain(dsi_camera_t *dsi, int gain) {
+static int dsicmd_set_gain(dsi_camera_t *dsi, int gain) {
 	if (gain < 0 || gain > 63)
 		return -1;
 	return dsicmd_command_2(dsi, SET_GAIN, gain);
 }
 
-int dsicmd_get_gain(dsi_camera_t *dsi) {
+static int dsicmd_get_gain(dsi_camera_t *dsi) {
 	return dsicmd_command_1(dsi, GET_GAIN);
 }
 
-int dsicmd_set_offset(dsi_camera_t *dsi, int offset) {
+static int dsicmd_set_offset(dsi_camera_t *dsi, int offset) {
 	/* FIXME: check offset for validity */
 	return dsicmd_command_2(dsi, SET_OFFSET, offset);
 }
 
-int dsicmd_get_offset(dsi_camera_t *dsi) {
+static int dsicmd_get_offset(dsi_camera_t *dsi) {
 	return dsicmd_command_1(dsi, GET_OFFSET);
 }
 
-int dsicmd_set_vdd_mode(dsi_camera_t *dsi, int mode) {
+static int dsicmd_set_vdd_mode(dsi_camera_t *dsi, int mode) {
 	/* FIXME: check mode for validity */
 	return dsicmd_command_2(dsi, SET_VDD_MODE, mode);
 }
 
-int dsicmd_get_vdd_mode(dsi_camera_t *dsi) {
+static int dsicmd_get_vdd_mode(dsi_camera_t *dsi) {
 	return dsicmd_command_1(dsi, GET_VDD_MODE);
 }
 
-int dsicmd_set_flush_mode(dsi_camera_t *dsi, int mode) {
+static int dsicmd_set_flush_mode(dsi_camera_t *dsi, int mode) {
 	/* FIXME: check mode for validity */
 	return dsicmd_command_2(dsi, SET_FLUSH_MODE, mode);
 }
 
-int dsicmd_get_flush_mode(dsi_camera_t *dsi) {
+static int dsicmd_get_flush_mode(dsi_camera_t *dsi) {
 	return dsicmd_command_1(dsi, GET_FLUSH_MODE);
 }
 
-int dsicmd_set_readout_mode(dsi_camera_t *dsi, int mode) {
+static int dsicmd_set_readout_mode(dsi_camera_t *dsi, int mode) {
 	/* FIXME: check mode for validity */
 	return dsicmd_command_2(dsi, SET_READOUT_MODE, mode);
 }
 
-int dsicmd_get_readout_mode(dsi_camera_t *dsi) {
+static int dsicmd_get_readout_mode(dsi_camera_t *dsi) {
 	return dsicmd_command_1(dsi, GET_READOUT_MODE);
 }
 
-int dsicmd_set_readout_delay(dsi_camera_t *dsi, int delay) {
+static int dsicmd_set_readout_delay(dsi_camera_t *dsi, int delay) {
 	/* FIXME: check mode for validity */
 	return dsicmd_command_2(dsi, SET_READOUT_DELAY, delay);
 }
 
-int dsicmd_get_readout_delay(dsi_camera_t *dsi) {
+static int dsicmd_get_readout_delay(dsi_camera_t *dsi) {
 	return dsicmd_command_1(dsi, GET_READOUT_DELAY);
 }
 
-int dsicmd_set_readout_speed(dsi_camera_t *dsi, int speed) {
+static int dsicmd_set_readout_speed(dsi_camera_t *dsi, int speed) {
 	/* FIXME: check speed for validity */
 	return dsicmd_command_2(dsi, SET_READOUT_SPEED, speed);
 }
 
-int dsicmd_get_readout_speed(dsi_camera_t *dsi) {
+static int dsicmd_get_readout_speed(dsi_camera_t *dsi) {
 	return dsicmd_command_1(dsi, GET_READOUT_SPEED);
 }
 
-int dsicmd_get_temperature(dsi_camera_t *dsi) {
+static int dsicmd_get_temperature(dsi_camera_t *dsi) {
 	if (!dsi->has_temperature_sensor) return NO_TEMP_SENSOR;
 	return dsicmd_command_1(dsi, GET_TEMP);
 }
 
-int dsicmd_get_row_count_odd(dsi_camera_t *dsi) {
+static int dsicmd_get_row_count_odd(dsi_camera_t *dsi) {
 	/* While we read the value from the camera, it lies except for the
 	   original DSI.  So if it has been set, we just use it as-is. */
 	if (dsi->read_height_odd <= 0)
@@ -873,7 +879,7 @@ int dsicmd_get_row_count_odd(dsi_camera_t *dsi) {
 	return dsi->read_height_odd;
 }
 
-int dsicmd_get_row_count_even(dsi_camera_t *dsi) {
+static int dsicmd_get_row_count_even(dsi_camera_t *dsi) {
 	/* While we read the value from the camera, it lies except for the
 	   original DSI.  So if it has been set, we just use it as-is. */
 	if (dsi->read_height_even <= 0)
@@ -881,66 +887,8 @@ int dsicmd_get_row_count_even(dsi_camera_t *dsi) {
 	return dsi->read_height_even;
 }
 
-void dsi_set_image_little_endian(dsi_camera_t *dsi, int little_endian) {
-	if (little_endian) {
-		dsi->little_endian_data = 1;
-	} else {
-		dsi->little_endian_data = 0;
-	}
-}
 
-int dsi_set_amp_gain(dsi_camera_t *dsi, int gain) {
-	if (gain > 100)
-		dsi->amp_gain_pct = 100;
-	else if (gain < 0)
-		dsi->amp_gain_pct = 0;
-	else
-		dsi->amp_gain_pct = gain;
-	return dsi->amp_gain_pct;
-}
-
-int dsi_get_amp_gain(dsi_camera_t *dsi) {
-	return dsi->amp_gain_pct;
-}
-
-int dsi_set_amp_offset(dsi_camera_t *dsi, int offset) {
-	if (offset > 100)
-		dsi->amp_offset_pct = 100;
-	else if (offset < 0)
-		dsi->amp_offset_pct = 0;
-	else
-		dsi->amp_offset_pct = offset;
-	return dsi->amp_offset_pct;
-}
-
-int dsi_get_amp_offset(dsi_camera_t *dsi) {
-	return dsi->amp_offset_pct;
-}
-
-int dsi_get_image_width(dsi_camera_t *dsi) {
-	return dsi->image_width;
-}
-
-int dsi_get_image_height(dsi_camera_t *dsi) {
-	return dsi->image_height;
-}
-
-double dsi_get_pixel_width(dsi_camera_t *dsi) {
-	return dsi->pixel_size_x;
-}
-
-double dsi_get_pixel_height(dsi_camera_t *dsi) {
-	return dsi->pixel_size_y;
-}
-
-
-double dsi_get_temperature(dsi_camera_t *dsi) {
-	int raw_temp = dsicmd_get_temperature(dsi);
-	if (raw_temp == NO_TEMP_SENSOR) return (double)NO_TEMP_SENSOR;
-	return floor((double) raw_temp / 25.6) / 10.0;
-}
-
-unsigned char dsicmd_get_eeprom_byte(dsi_camera_t *dsi, int offset) {
+static unsigned char dsicmd_get_eeprom_byte(dsi_camera_t *dsi, int offset) {
 	if (dsi->eeprom_length < 0) {
 		dsi->eeprom_length = dsicmd_command_1(dsi, GET_EEPROM_LENGTH);
 	}
@@ -949,7 +897,7 @@ unsigned char dsicmd_get_eeprom_byte(dsi_camera_t *dsi, int offset) {
 	return dsicmd_command_2(dsi, GET_EEPROM_BYTE, offset);
 }
 
-unsigned char dsicmd_set_eeprom_byte(dsi_camera_t *dsi, char byte, int offset) {
+static unsigned char dsicmd_set_eeprom_byte(dsi_camera_t *dsi, char byte, int offset) {
 	if (dsi->eeprom_length < 0) {
 		dsi->eeprom_length = dsicmd_command_1(dsi, GET_EEPROM_LENGTH);
 	}
@@ -1025,73 +973,6 @@ static void dsicmd_set_eeprom_string(dsi_camera_t *dsi, char *buffer, int start,
 	free(scratch);
 }
 
-const char *dsi_get_chip_name(dsi_camera_t *dsi) {
-	if (dsi->chip_name[0] == 0) {
-		memset(dsi->chip_name, 0, 21);
-		dsicmd_get_eeprom_string(dsi, dsi->chip_name, 8, 20);
-	}
-	return dsi->chip_name;
-}
-
-const char *dsi_get_model_name(dsi_camera_t *dsi) {
-	if (dsi->model_name[0] == 0) {
-		memset(dsi->chip_name, 0, DSI_NAME_LEN);
-		dsi_get_chip_name(dsi);
-		if (!strncmp(dsi->chip_name, "ICX254AL", DSI_NAME_LEN)) {
-			strncpy(dsi->model_name, "DSI Pro", DSI_NAME_LEN);
-		} else if (!strncmp(dsi->chip_name, "ICX429ALL", DSI_NAME_LEN)) {
-			strncpy(dsi->model_name, "DSI Pro II", DSI_NAME_LEN);
-		} else if (!strncmp(dsi->chip_name, "ICX429AKL", DSI_NAME_LEN)) {
-			strncpy(dsi->model_name, "DSI Color II", DSI_NAME_LEN);
-		} else if (!strncmp(dsi->chip_name, "ICX404AK", DSI_NAME_LEN)) {
-			strncpy(dsi->model_name, "DSI Color", DSI_NAME_LEN);
-		} else if (!strncmp(dsi->chip_name, "ICX285AL", DSI_NAME_LEN)) {
-		   strncpy(dsi->model_name, "DSI Pro III", DSI_NAME_LEN);
-		} else {
-		   strncpy(dsi->model_name, "DSI Unknown", DSI_NAME_LEN);
-		}
-	}
-	return dsi->model_name;
-}
-
-
-const char *dsi_get_camera_name(dsi_camera_t *dsi) {
-	if (dsi->camera_name[0] == 0) {
-		memset(dsi->camera_name, 0, DSI_NAME_LEN);
-		dsicmd_get_eeprom_string(dsi, dsi->camera_name, 0x1c, 0x20);
-	}
-	return dsi->camera_name;
-}
-
-/**
- * Store a name for the DSI camera in its EEPROM for future reference.
- *
- * @param dsi Pointer to an open dsi_camera_t holding state information.
- * @param name
- *
- * @return
- */
-const char *dsi_set_camera_name(dsi_camera_t *dsi, const char *name) {
-	if (dsi->camera_name[0] == 0) {
-		memset(dsi->camera_name, 0, DSI_NAME_LEN);
-	}
-	strncpy(dsi->camera_name, name, DSI_NAME_LEN);
-	dsicmd_set_eeprom_string(dsi, dsi->camera_name, 0x1c, 0x20);
-	return dsi->camera_name;
-}
-
-const char *dsi_get_serial_number(dsi_camera_t *dsi) {
-	if (dsi->serial_number[0] == 0) {
-		int i;
-		char temp[10];
-		dsicmd_get_eeprom_data(dsi, temp, 0, 8);
-		for (i = 0; i < 8; i++) {
-			sprintf(dsi->serial_number+2*i, "%02x", temp[i]);
-		}
-	}
-	return dsi->serial_number;
-}
-
 int dsicmd_get_version(dsi_camera_t *dsi) {
 	if (dsi->version.value == -1) {
 		unsigned int value = dsicmd_command_1(dsi, GET_VERSION);
@@ -1122,7 +1003,7 @@ static void dsicmd_load_status(dsi_camera_t *dsi) {
 	}
 }
 
-int dsicmd_get_usb_speed(dsi_camera_t *dsi) {
+static int dsicmd_get_usb_speed(dsi_camera_t *dsi) {
 	dsicmd_load_status(dsi);
 	return dsi->usb_speed;
 }
@@ -1419,6 +1300,206 @@ static void dsicmd_init_usb_device(dsi_camera_t *dsi) {
 }
 
 
+/**
+ * Decode the internal image buffer from an already read image.
+ */
+static unsigned char *dsicmd_decode_image(dsi_camera_t *dsi, unsigned char *buffer) {
+
+	int xpix, ypix, outpos;
+	int is_odd_row, row_start;
+
+	/* FIXME: This method should really only be called if the camera is an
+	   post-imaging state. */
+
+	if (buffer == NULL) return NULL;
+
+	outpos = 0;
+	if (dsi->is_interlaced) {
+		for (ypix = 0; ypix < dsi->image_height; ypix++) {
+			int ixypos;
+			/* The odd-even interlacing means that we advance the row start offset
+			   every other pass through the loop.  It is the same offset on each
+			   of those two passes, but we read from a different buffer. */
+			is_odd_row = (ypix + dsi->image_offset_y) % 2;
+			row_start  = dsi->read_width * ((ypix + dsi->image_offset_y) / 2);
+			ixypos = 2 * (row_start + dsi->image_offset_x);
+			/*
+			  fprintf(stderr, "starting image row %d, outpos=%d, is_odd_row=%d, row_start=%d, ixypos=%d\n",
+			  ypix, outpos, is_odd_row, row_start, ixypos);
+			*/
+			if (dsi->little_endian_data) {
+				for (xpix = 0; xpix < dsi->image_width; xpix++) {
+					if (is_odd_row) { /* invert bytes as camera givers big endian */
+						buffer[outpos++] = dsi->read_buffer_odd[ixypos+1];
+						buffer[outpos++] = dsi->read_buffer_odd[ixypos];
+					} else {
+						buffer[outpos++] = dsi->read_buffer_even[ixypos+1];
+						buffer[outpos++] = dsi->read_buffer_even[ixypos];
+					}
+					ixypos += 2;
+				}
+			} else { /* just copy data as camera givers big endian */
+				if (is_odd_row) {
+					memcpy(buffer + outpos, dsi->read_buffer_odd + ixypos, dsi->image_width * dsi->read_bpp);
+				} else {
+					memcpy(buffer + outpos, dsi->read_buffer_even + ixypos, dsi->image_width * dsi->read_bpp);
+				}
+				outpos += dsi->image_width * dsi->read_bpp;
+			}
+		}
+	} else { /* Non interlaced -> DSI III*/
+		if (dsi->little_endian_data) { /* invert bytes as camera givers big endian */
+			for (ypix = 0; ypix < dsi->image_height; ypix++) {
+				int ixypos;
+				row_start  = dsi->read_width * (ypix + dsi->image_offset_y);
+				ixypos = 2 * (row_start + dsi->image_offset_x);
+				/*
+				  fprintf(stderr, "starting image row %d, outpos=%d, is_odd_row=%d, row_start=%d, ixypos=%d\n",
+				  ypix, outpos, is_odd_row, row_start, ixypos);
+				*/
+				for (xpix = 0; xpix < dsi->image_width; xpix++) {
+					buffer[outpos++] = dsi->read_buffer_odd[ixypos+1];
+					buffer[outpos++] = dsi->read_buffer_odd[ixypos];
+					ixypos += 2;
+				}
+			}
+		} else {  /* just copy data as camera givers big endian */
+			memcpy(buffer, dsi->read_buffer_odd, dsi->image_width * dsi->image_height * dsi->read_bpp);
+		}
+	}
+	return buffer;
+}
+
+/* User Callable functions */
+
+void dsi_set_image_little_endian(dsi_camera_t *dsi, int little_endian) {
+	if (little_endian) {
+		dsi->little_endian_data = 1;
+	} else {
+		dsi->little_endian_data = 0;
+	}
+}
+
+int dsi_set_amp_gain(dsi_camera_t *dsi, int gain) {
+	if (gain > 100)
+		dsi->amp_gain_pct = 100;
+	else if (gain < 0)
+		dsi->amp_gain_pct = 0;
+	else
+		dsi->amp_gain_pct = gain;
+	return dsi->amp_gain_pct;
+}
+
+int dsi_get_amp_gain(dsi_camera_t *dsi) {
+	return dsi->amp_gain_pct;
+}
+
+int dsi_set_amp_offset(dsi_camera_t *dsi, int offset) {
+	if (offset > 100)
+		dsi->amp_offset_pct = 100;
+	else if (offset < 0)
+		dsi->amp_offset_pct = 0;
+	else
+		dsi->amp_offset_pct = offset;
+	return dsi->amp_offset_pct;
+}
+
+int dsi_get_amp_offset(dsi_camera_t *dsi) {
+	return dsi->amp_offset_pct;
+}
+
+int dsi_get_image_width(dsi_camera_t *dsi) {
+	return dsi->image_width;
+}
+
+int dsi_get_image_height(dsi_camera_t *dsi) {
+	return dsi->image_height;
+}
+
+double dsi_get_pixel_width(dsi_camera_t *dsi) {
+	return dsi->pixel_size_x;
+}
+
+double dsi_get_pixel_height(dsi_camera_t *dsi) {
+	return dsi->pixel_size_y;
+}
+
+double dsi_get_temperature(dsi_camera_t *dsi) {
+	int raw_temp = dsicmd_get_temperature(dsi);
+	if (raw_temp == NO_TEMP_SENSOR) return (double)NO_TEMP_SENSOR;
+	return floor((double) raw_temp / 25.6) / 10.0;
+}
+
+const char *dsi_get_chip_name(dsi_camera_t *dsi) {
+	if (dsi->chip_name[0] == 0) {
+		memset(dsi->chip_name, 0, 21);
+		dsicmd_get_eeprom_string(dsi, dsi->chip_name, 8, 20);
+	}
+	return dsi->chip_name;
+}
+
+const char *dsi_get_model_name(dsi_camera_t *dsi) {
+	if (dsi->model_name[0] == 0) {
+		memset(dsi->chip_name, 0, DSI_NAME_LEN);
+		dsi_get_chip_name(dsi);
+		if (!strncmp(dsi->chip_name, "ICX254AL", DSI_NAME_LEN)) {
+			strncpy(dsi->model_name, "DSI Pro", DSI_NAME_LEN);
+		} else if (!strncmp(dsi->chip_name, "ICX429ALL", DSI_NAME_LEN)) {
+			strncpy(dsi->model_name, "DSI Pro II", DSI_NAME_LEN);
+		} else if (!strncmp(dsi->chip_name, "ICX429AKL", DSI_NAME_LEN)) {
+			strncpy(dsi->model_name, "DSI Color II", DSI_NAME_LEN);
+		} else if (!strncmp(dsi->chip_name, "ICX404AK", DSI_NAME_LEN)) {
+			strncpy(dsi->model_name, "DSI Color", DSI_NAME_LEN);
+		} else if (!strncmp(dsi->chip_name, "ICX285AL", DSI_NAME_LEN)) {
+		   strncpy(dsi->model_name, "DSI Pro III", DSI_NAME_LEN);
+		} else {
+		   strncpy(dsi->model_name, "DSI Unknown", DSI_NAME_LEN);
+		}
+	}
+	return dsi->model_name;
+}
+
+const char *dsi_get_camera_name(dsi_camera_t *dsi) {
+	if (dsi->camera_name[0] == 0) {
+		memset(dsi->camera_name, 0, DSI_NAME_LEN);
+		dsicmd_get_eeprom_string(dsi, dsi->camera_name, 0x1c, 0x20);
+	}
+	return dsi->camera_name;
+}
+
+int dsi_get_bytespp(dsi_camera_t *dsi) {
+	return dsi->read_bpp;
+}
+
+/**
+ * Store a name for the DSI camera in its EEPROM for future reference.
+ *
+ * @param dsi Pointer to an open dsi_camera_t holding state information.
+ * @param name
+ *
+ * @return
+ */
+const char *dsi_set_camera_name(dsi_camera_t *dsi, const char *name) {
+	if (dsi->camera_name[0] == 0) {
+		memset(dsi->camera_name, 0, DSI_NAME_LEN);
+	}
+	strncpy(dsi->camera_name, name, DSI_NAME_LEN);
+	dsicmd_set_eeprom_string(dsi, dsi->camera_name, 0x1c, 0x20);
+	return dsi->camera_name;
+}
+
+const char *dsi_get_serial_number(dsi_camera_t *dsi) {
+	if (dsi->serial_number[0] == 0) {
+		int i;
+		char temp[10];
+		dsicmd_get_eeprom_data(dsi, temp, 0, 8);
+		for (i = 0; i < 8; i++) {
+			sprintf(dsi->serial_number+2*i, "%02x", temp[i]);
+		}
+	}
+	return dsi->serial_number;
+}
+
 int dsi_get_identifier(libusb_device *device, char *identifier) {
 	char data[11];
 	int i;
@@ -1436,7 +1517,7 @@ int dsi_get_identifier(libusb_device *device, char *identifier) {
 
 extern unsigned char FIRMWARE[];
 
-static int write_fw(libusb_device_handle *handle) {
+static int dsicmd_write_firmware(libusb_device_handle *handle) {
 	unsigned char *pnt = FIRMWARE;
 	int address;
 	int length;
@@ -1447,9 +1528,9 @@ static int write_fw(libusb_device_handle *handle) {
 		length = (*pnt++) & 0xFF;
 		address = (*pnt++) & 0xFF;
 		address = (address  << 8)| ((*pnt++) & 0xFF);
-    pnt++;
+		pnt++;
 		rc = libusb_control_transfer(handle, LIBUSB_ENDPOINT_OUT | LIBUSB_REQUEST_TYPE_VENDOR | LIBUSB_RECIPIENT_DEVICE, 0xA0, address, 0, pnt, length, 3000);
-    pnt++;
+		pnt++;
 		pnt += length;
 	}
 	if (rc >= 0) {
@@ -1457,7 +1538,6 @@ static int write_fw(libusb_device_handle *handle) {
 	}
 	return rc;
 }
-
 
 void dsi_load_firmware() {
 	struct libusb_device **list = NULL;
@@ -1478,7 +1558,7 @@ void dsi_load_firmware() {
 					if (rc >= 0) {
 						rc = libusb_claim_interface(handle, 0);
 					}
-					rc = write_fw(handle);
+					rc = dsicmd_write_firmware(handle);
 					rc = libusb_release_interface(handle, 0);
 					libusb_close(handle);
 					sleep(3);
@@ -1490,7 +1570,7 @@ void dsi_load_firmware() {
 }
 
 
-int dsi_scan(dsi_device_list devices) {
+int dsi_scan_usb(dsi_device_list devices) {
 	struct libusb_device **list = NULL;
 	struct libusb_device_descriptor desc;
 	char dev_id[20];
@@ -1697,6 +1777,14 @@ int dsi_start_exposure(dsi_camera_t *dsi, double exptime) {
 	return 0;
 }
 
+int dsi_abort_exposure(dsi_camera_t *dsi) {
+	return dsicmd_abort_exposure(dsi);
+}
+
+int dsi_reset_camera(dsi_camera_t *dsi) {
+	return dsicmd_reset_camera(dsi);
+}
+
 /**
  * Read an image from the DSI camera.
  *
@@ -1813,75 +1901,6 @@ int dsi_read_image(dsi_camera_t *dsi, unsigned char *buffer, int flags) {
 	return (dsicmd_decode_image(dsi, buffer) == NULL) ? EINVAL : 0;
 }
 
-/**
- * Decode the internal image buffer from an already read image.
- */
-unsigned char *dsicmd_decode_image(dsi_camera_t *dsi, unsigned char *buffer) {
-
-	int xpix, ypix, outpos;
-	int is_odd_row, row_start;
-
-	/* FIXME: This method should really only be called if the camera is an
-	   post-imaging state. */
-
-	if (buffer == NULL) return NULL;
-
-	outpos = 0;
-	if (dsi->is_interlaced) {
-		for (ypix = 0; ypix < dsi->image_height; ypix++) {
-			int ixypos;
-			/* The odd-even interlacing means that we advance the row start offset
-			   every other pass through the loop.  It is the same offset on each
-			   of those two passes, but we read from a different buffer. */
-			is_odd_row = (ypix + dsi->image_offset_y) % 2;
-			row_start  = dsi->read_width * ((ypix + dsi->image_offset_y) / 2);
-			ixypos = 2 * (row_start + dsi->image_offset_x);
-			/*
-			  fprintf(stderr, "starting image row %d, outpos=%d, is_odd_row=%d, row_start=%d, ixypos=%d\n",
-			  ypix, outpos, is_odd_row, row_start, ixypos);
-			*/
-			if (dsi->little_endian_data) {
-				for (xpix = 0; xpix < dsi->image_width; xpix++) {
-					if (is_odd_row) { /* invert bytes as camera givers big endian */
-						buffer[outpos++] = dsi->read_buffer_odd[ixypos+1];
-						buffer[outpos++] = dsi->read_buffer_odd[ixypos];
-					} else {
-						buffer[outpos++] = dsi->read_buffer_even[ixypos+1];
-						buffer[outpos++] = dsi->read_buffer_even[ixypos];
-					}
-					ixypos += 2;
-				}
-			} else { /* just copy data as camera givers big endian */
-				if (is_odd_row) {
-					memcpy(buffer + outpos, dsi->read_buffer_odd + ixypos, dsi->image_width * dsi->read_bpp);
-				} else {
-					memcpy(buffer + outpos, dsi->read_buffer_even + ixypos, dsi->image_width * dsi->read_bpp);
-				}
-				outpos += dsi->image_width * dsi->read_bpp;
-			}
-		}
-	} else { /* Non interlaced -> DSI III*/
-		if (dsi->little_endian_data) { /* invert bytes as camera givers big endian */
-			for (ypix = 0; ypix < dsi->image_height; ypix++) {
-				int ixypos;
-				row_start  = dsi->read_width * (ypix + dsi->image_offset_y);
-				ixypos = 2 * (row_start + dsi->image_offset_x);
-				/*
-				  fprintf(stderr, "starting image row %d, outpos=%d, is_odd_row=%d, row_start=%d, ixypos=%d\n",
-				  ypix, outpos, is_odd_row, row_start, ixypos);
-				*/
-				for (xpix = 0; xpix < dsi->image_width; xpix++) {
-					buffer[outpos++] = dsi->read_buffer_odd[ixypos+1];
-					buffer[outpos++] = dsi->read_buffer_odd[ixypos];
-					ixypos += 2;
-				}
-			}
-		} else {  /* just copy data as camera givers big endian */
-			memcpy(buffer, dsi->read_buffer_odd, dsi->image_width * dsi->image_height * dsi->read_bpp);
-		}
-	}
-	return buffer;
-}
 
 /**
  * Create a simulated DSI camera intialized to behave like the named camera chip.

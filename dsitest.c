@@ -26,11 +26,11 @@ main(int argc, char **argv)
 	#define SCRATCH_LENGTH 100
 	char scratch[SCRATCH_LENGTH];
 
-	dsi_inint();
+	libdsi_inint();
 
 	dsi_load_firmware();
 
-	int num_cams = dsi_scan(devices);
+	int num_cams = dsi_scan_usb(devices);
 
 	printf("Cameras found: %d\n", num_cams);
 	for (i = 0; i< num_cams; i++) {
@@ -53,26 +53,15 @@ main(int argc, char **argv)
 	fprintf(stderr, "dsi_get_model_name(dsi)    = %s\n", dsi_get_model_name(dsi));
 	fprintf(stderr, "dsi_get_chip_name(dsi)      = %s\n", dsi_get_chip_name(dsi));
 	fprintf(stderr, "dsi_get_serial_number(dsi)  = %s\n", dsi_get_serial_number(dsi));
-
-	fprintf(stderr, "dsicmd_get_row_count_odd(dsi)  = %d\n", dsicmd_get_row_count_odd(dsi));
-	fprintf(stderr, "dsicmd_get_row_count_even(dsi) = %d\n", dsicmd_get_row_count_even(dsi));
-	fprintf(stderr, "dsicmd_get_gain(dsi)           = %d\n", dsicmd_get_gain(dsi));
-	fprintf(stderr, "dsicmd_get_offset(dsi)         = %d\n", dsicmd_get_offset(dsi));
-	fprintf(stderr, "dsicmd_get_readout_speed(dsi)  = %d\n", dsicmd_get_readout_speed(dsi));
-	fprintf(stderr, "dsicmd_get_readout_mode(dsi)   = %d\n", dsicmd_get_readout_mode(dsi));
-	fprintf(stderr, "dsicmd_get_readout_delay(dsi)  = %d\n", dsicmd_get_readout_delay(dsi));
-	fprintf(stderr, "dsicmd_get_vdd_mode(dsi)       = %d\n", dsicmd_get_vdd_mode(dsi));
-	fprintf(stderr, "dsicmd_get_flush_mode(dsi)     = %d\n", dsicmd_get_flush_mode(dsi));
+	fprintf(stderr, "dsi_get_amp_gain(dsi)           = %d\n", dsi_get_amp_gain(dsi));
+	fprintf(stderr, "dsi_get_amp_offset(dsi)         = %d\n", dsi_get_amp_offset(dsi));
 	fprintf(stderr, "dsi_get_temperature(dsi)    = %.1f\n", dsi_get_temperature(dsi));
-	fprintf(stderr, "dsicmd_get_usb_speed(dsi)      = %d (%s)\n",
-			dsicmd_get_usb_speed(dsi), dsicmd_lookup_usb_speed(dsicmd_get_usb_speed(dsi)));
-
 	fprintf(stderr, "dsi_get_image_width(dsi)  = %d\n", dsi_get_image_width(dsi));
 	fprintf(stderr, "dsi_get_image_height(dsi) = %d\n", dsi_get_image_height(dsi));
 	fprintf(stderr, "dsi_get_pixel_width(dsi)  = %.2f\n", dsi_get_pixel_width(dsi));
 	fprintf(stderr, "dsi_get_pixel_height(dsi) = %.2f\n", dsi_get_pixel_height(dsi));
 
-	uint16_t *image = (uint16_t*)malloc(dsi_get_image_width(dsi) * dsi_get_image_height(dsi) * 2);
+	uint16_t *image = (uint16_t*)malloc(dsi_get_image_width(dsi) * dsi_get_image_height(dsi) * dsi_get_bytespp(dsi));
 	for (i = 0; i < 1; i++) {
 		int j, k, m;
 		int code;
@@ -92,9 +81,9 @@ main(int argc, char **argv)
 				fprintf(stderr, "image not ready, sleeping...\n");
 				sleep(1);
 			} else {
-				dsicmd_abort_exposure(dsi);
-				dsicmd_reset_camera(dsi);
-				dsicmd_reset_camera(dsi);
+				dsi_abort_exposure(dsi);
+				dsi_reset_camera(dsi);
+				dsi_reset_camera(dsi);
 				dsi_start_exposure(dsi, EXP_TIME);
 			}
 		}
