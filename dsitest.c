@@ -75,10 +75,10 @@ main(int argc, char **argv)
 			   exposure is running then return ticks remaining. */
 
 	        for (i = 0; i < 10; i++) {
-				fprintf(stderr, "Starting exposure %.2f...\n", (x*i)/25.0);
+				fprintf(stderr, "Starting exposure %.2f...\n", (x/5.0));
 				dsi_set_amp_gain(dsi, i*10);
 				dsi_set_amp_offset(dsi, x*5);
-				dsi_start_exposure(dsi, (x*i)/25.0);
+				dsi_start_exposure(dsi, 1.6 ); //x / 5.0 );
 				fprintf(stderr, "Reading image...\n");
 				while ((code = dsi_read_image(dsi, (unsigned char*)image, O_NONBLOCK)) != 0) {
 					if (code == EWOULDBLOCK) {
@@ -109,6 +109,6 @@ main(int argc, char **argv)
 		free(image);
 		dsi_close_camera(dsi);
 		//dsi_exit();
-		sleep(5);
+		sleep(2);
 	}
 }

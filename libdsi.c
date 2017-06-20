@@ -1191,6 +1191,11 @@ static dsi_camera_t *dsicmd_init_dsi(dsi_camera_t *dsi) {
 		dsi->pixel_size_y     = 6.45;
 		dsi->has_temperature_sensor = 1;
 
+		dsicmd_command_2(dsi, SET_ROW_COUNT_EVEN, dsi->read_height_even);
+		dsicmd_command_2(dsi, SET_ROW_COUNT_ODD,  dsi->read_height_odd);
+		dsicmd_command_2(dsi, AD_WRITE,  88);
+		dsicmd_command_2(dsi, AD_WRITE, 704);
+
 	} else {
 		/* Die, camera not supported. */
 		fprintf(stderr, "Camera %s not supported", dsi->chip_name);
@@ -1453,7 +1458,7 @@ const char *dsi_get_model_name(dsi_camera_t *dsi) {
 			strncpy(dsi->model_name, "DSI Color II", DSI_NAME_LEN);
 		} else if (!strncmp(dsi->chip_name, "ICX404AK", DSI_NAME_LEN)) {
 			strncpy(dsi->model_name, "DSI Color", DSI_NAME_LEN);
-		} else if (!strncmp(dsi->chip_name, "ICX285AL", DSI_NAME_LEN)) {
+		} else if (!strncmp(dsi->chip_name, "ICX285AL", 8)) { // Should be 8 as it can vary afer 8th suybol
 		   strncpy(dsi->model_name, "DSI Pro III", DSI_NAME_LEN);
 		} else {
 		   strncpy(dsi->model_name, "DSI Unknown", DSI_NAME_LEN);
@@ -1881,7 +1886,7 @@ int dsi_read_image(dsi_camera_t *dsi, unsigned char *buffer, int flags) {
 			return EIO;
 		}
 	} else { /* Non interlaced -> DSI III */
-		int exposure_ticks = dsi->exposure_time * 1000;
+		int exposure_ticks = dsi->exposure_time * 10000;
 		if (exposure_ticks >= 10000) {
 			dsicmd_set_vdd_mode(dsi, DSI_VDD_MODE_ON);
 		}
