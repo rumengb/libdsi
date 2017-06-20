@@ -57,6 +57,7 @@
 				5995903D1EF854FF00AFC487 /* Products */,
 			);
 			sourceTree = "<group>";
+			usesTabs = 1;
 		};
 		5995903D1EF854FF00AFC487 /* Products */ = {
 			isa = PBXGroup;
