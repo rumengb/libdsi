@@ -3,8 +3,8 @@
  * Based on the code by Roland Roberts <roland@astrofoto.org>
  */
 
-#ifndef __dsi_h
-#define __dsi_h
+#ifndef __libdsi_h
+#define __libdsi_h
 
 #include <libusb.h>
 
@@ -16,7 +16,6 @@ typedef struct DSI_CAMERA dsi_camera_t;
 #define DSI_NAME_LEN 32
 #define DSI_MAX_DEVICES 32
 #define NO_TEMP_SENSOR  99999999
-
 
 typedef char dsi_device_list[DSI_MAX_DEVICES][DSI_ID_LEN];
 
@@ -225,4 +224,4 @@ int dsicmd_get_version(dsi_camera_t *dsi);
 
 dsi_camera_t *dsitst_open(const char *chip_name);
 
-#endif /* __dsi_h */
+#endif /* __libdsi_h */

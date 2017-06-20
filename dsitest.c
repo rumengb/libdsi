@@ -11,7 +11,7 @@
 #include <fcntl.h>
 #include <errno.h>
 
-#include "dsi.h"
+#include "libdsi.h"
 
 #define EXP_TIME 0.3
 #define FILE_NAME "XXXX"

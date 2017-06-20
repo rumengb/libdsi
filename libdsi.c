@@ -15,7 +15,9 @@
 #include <math.h>
 #include <string.h>
 #include <ctype.h>
-#include "dsi.h"
+
+#include "libdsi.h"
+#include "libdsi_firmware.h"
 
 static int dsicmd_command_1(dsi_camera_t *dsi, dsi_command_t cmd);
 static int dsicmd_command_2(dsi_camera_t *dsi, dsi_command_t cmd, int );
@@ -1514,8 +1516,6 @@ int dsi_get_identifier(libusb_device *device, char *identifier) {
 	}
 	return LIBUSB_SUCCESS;
 }
-
-extern unsigned char FIRMWARE[];
 
 static int dsicmd_write_firmware(libusb_device_handle *handle) {
 	unsigned char *pnt = FIRMWARE;
