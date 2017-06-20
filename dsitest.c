@@ -38,7 +38,7 @@ main(int argc, char **argv)
 	}
 
 	libdsi_set_verbose_init((0));
-	dsi = dsi_open(devices[0]);
+	dsi = dsi_open_camera(devices[0]);
 	if (dsi == 0) {
 		fprintf(stderr, "failed to open DSI device %s\n", devices[0]);
 		exit(1);
@@ -101,6 +101,6 @@ main(int argc, char **argv)
 		fclose(fptr);
 	 }
 	 free(image);
-	 dsi_close(dsi);
+	 dsi_close_camera(dsi);
 	 //dsi_exit();
 }
