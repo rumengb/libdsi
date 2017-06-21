@@ -934,13 +934,13 @@ static void dsicmd_get_eeprom_string(dsi_camera_t *dsi, unsigned char *buffer, i
 	if ((buffer[0] == 0xff) || (buffer[1] == 0xff) || (buffer[2] == 0xff)) {
 		strncpy((char *)buffer, "None", length);
 	} else {
-		for (i = 0; i < length-1; i++) buffer[i] = buffer[i+1];
-		buffer[length-1] = '\0';
-	}
-	for (i = 0; i < length; i++) {
-		if (buffer[i] == 0xff) {
-			buffer[i] = '\0';
-			break;
+		for (i = 0; i < length-1; i++) {
+			if (!isprint(buffer[i+1])) {
+				/* some camera use GS as delimiter stop at any nonprinable character */
+				buffer[i] = '\0';
+				break;
+			}
+			buffer[i] = buffer[i+1];
 		}
 	}
 }
@@ -1662,8 +1662,6 @@ dsi_camera_t *dsi_open_camera(const char *identifier) {
 
 void dsi_close_camera(dsi_camera_t *dsi) {
 	/* Next is guesswork but seems to work! */
-	dsi_start_exposure(dsi, 0.0001);
-	dsi_read_image(dsi, 0, 0);
 	if(dsi->is_interlaced) {
 		dsicmd_command_1(dsi, RESET);
 	}
