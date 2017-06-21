@@ -217,6 +217,7 @@ int dsi_get_image_width(dsi_camera_t *dsi);
 int dsi_get_image_height(dsi_camera_t *dsi);
 double dsi_get_pixel_width(dsi_camera_t *dsi);
 double dsi_get_pixel_height(dsi_camera_t *dsi);
+double dsi_get_exposure_time_left(dsi_camera_t *dsi);
 
 int dsi_set_amp_gain(dsi_camera_t *dsi, int gain);
 int dsi_get_amp_gain(dsi_camera_t *dsi);

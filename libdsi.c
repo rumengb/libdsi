@@ -781,7 +781,7 @@ static int dsicmd_reset_camera(dsi_camera_t *dsi) {
 }
 
 static int dsicmd_set_exposure_time(dsi_camera_t *dsi, int ticks) {
-	/* FIXME: check time for validity */
+	if (ticks <= 0) ticks = 1;
 	dsi->exposure_time = ticks;
 	return dsicmd_command_2(dsi, SET_EXP_TIME, ticks);
 }
@@ -1052,7 +1052,6 @@ static dsi_camera_t *dsicmd_init_dsi(dsi_camera_t *dsi) {
 	dsi->little_endian_data = 1;
 
 	if (!dsi->is_simulation) {
-		dsicmd_command_1(dsi, RESET);
 		dsicmd_command_1(dsi, PING);
 		dsicmd_command_1(dsi, RESET);
 
@@ -1193,7 +1192,7 @@ static dsi_camera_t *dsicmd_init_dsi(dsi_camera_t *dsi) {
 
 		dsicmd_command_2(dsi, SET_ROW_COUNT_EVEN, dsi->read_height_even);
 		dsicmd_command_2(dsi, SET_ROW_COUNT_ODD,  dsi->read_height_odd);
-		dsicmd_command_2(dsi, AD_WRITE,  88);
+		dsicmd_command_2(dsi, AD_WRITE, 216);
 		dsicmd_command_2(dsi, AD_WRITE, 704);
 
 	} else {
@@ -1305,6 +1304,7 @@ static void dsicmd_init_usb_device(dsi_camera_t *dsi) {
 	assert(libusb_clear_halt(dsi->handle, 0x02) >= 0);
 	assert(libusb_clear_halt(dsi->handle, 0x04) >= 0);
 	assert(libusb_clear_halt(dsi->handle, 0x88) >= 0);
+
 }
 
 
@@ -1647,18 +1647,26 @@ dsi_camera_t *dsi_open_camera(const char *identifier) {
 	dsicmd_init_usb_device(dsi);
 	dsicmd_init_dsi(dsi);
 
-	dsi_start_exposure(dsi, 0.1);
+	dsi_start_exposure(dsi, 0.0001);
 	dsi_read_image(dsi, 0, 0);
-	dsi_start_exposure(dsi, 0.1);
-	dsi_read_image(dsi, 0, 0);
-	dsi_start_exposure(dsi, 0.1);
-	dsi_read_image(dsi, 0, 0);
+//	dsi_start_exposure(dsi, 0.0001);
+//	dsi_read_image(dsi, 0, 0);
+//	dsi_start_exposure(dsi, 0.1);
+//	dsi_read_image(dsi, 0, 0);
 
 	return dsi;
 }
 
 void dsi_close_camera(dsi_camera_t *dsi) {
-	dsi_reset_camera(dsi);
+	/* Next is guesswork but seems to work! */
+	dsi_start_exposure(dsi, 0.0001);
+	dsi_read_image(dsi, 0, 0);
+	if(dsi->is_interlaced) {
+		dsicmd_command_1(dsi, RESET);
+	}
+	dsicmd_command_1(dsi, PING);
+	dsicmd_command_1(dsi, RESET);
+
 	assert(libusb_release_interface(dsi->handle, 0) >= 0);
 	libusb_close(dsi->handle);
 	if (dsi->read_buffer_odd) free(dsi->read_buffer_odd);
@@ -1760,12 +1768,13 @@ int dsi_start_exposure(dsi_camera_t *dsi, double exptime) {
 		dsicmd_set_readout_delay(dsi, 4);
 		if (exposure_ticks < 10000) {
 			dsicmd_set_readout_mode(dsi, DSI_READOUT_MODE_DUAL);
+			dsicmd_get_readout_mode(dsi);
 			dsicmd_set_vdd_mode(dsi, DSI_VDD_MODE_ON);
 		} else {
 			dsicmd_set_readout_mode(dsi, DSI_READOUT_MODE_SINGLE);
+			dsicmd_get_readout_mode(dsi);
 			dsicmd_set_vdd_mode(dsi, DSI_VDD_MODE_OFF);
 		}
-		dsicmd_get_readout_mode(dsi);
 		//FIXME! should take vdd_mode in to account
 		//if ((dsi->vdd_mode) || (dsi->exposure_time < VDD_TRH)) {
 		//	dsicmd_set_vdd_mode(dsi, DSI_VDD_MODE_ON);
@@ -1782,6 +1791,10 @@ int dsi_start_exposure(dsi_camera_t *dsi, double exptime) {
 
 	dsi->imaging_state = DSI_IMAGE_EXPOSING;
 	return 0;
+}
+
+double dsi_get_exposure_time_left(dsi_camera_t *dsi) {
+	return dsicmd_get_exposure_time_left(dsi) / 10000.0;
 }
 
 int dsi_abort_exposure(dsi_camera_t *dsi) {
@@ -1845,10 +1858,9 @@ int dsi_read_image(dsi_camera_t *dsi, unsigned char *buffer, int flags) {
 					fprintf(stderr, "non-blocking requested, returning now\n");
 				return EWOULDBLOCK;
 			}
-			// usleep(100 * (ticks_left - dsi->read_image_timeout) + 100);
 			if (dsi->log_commands)
-				fprintf(stderr, "sleeping 1.005 sec\n");
-			usleep(1005000);
+				fprintf(stderr, "sleeping for %.4fs\n", ticks_left / 10000.0);
+			usleep(100 * ticks_left);
 			ticks_left = dsicmd_get_exposure_time_left(dsi);
 		}
 		/*    if (ticks_left < 0) {

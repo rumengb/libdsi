@@ -37,6 +37,9 @@ main(int argc, char **argv)
 		printf("Camera: %d  ID: %s\n", num_cams, devices[i]);
 	}
 
+	//dsi = dsi_open_camera(devices[0]);
+	//dsi_close_camera(dsi);
+
 	for (int x = 0; x < 20; x++) {
 		libdsi_set_verbose_init((0));
 		dsi = dsi_open_camera(devices[0]);
@@ -74,22 +77,26 @@ main(int argc, char **argv)
 			   One idea for the latter will set everything up and verify that the
 			   exposure is running then return ticks remaining. */
 
-	        for (i = 0; i < 10; i++) {
-				fprintf(stderr, "Starting exposure %.2f...\n", (x/5.0));
-				dsi_set_amp_gain(dsi, i*10);
-				dsi_set_amp_offset(dsi, x*5);
-				dsi_start_exposure(dsi, 1.6 ); //x / 5.0 );
+			for (i = 0; i < 3; i++) {
+				double exposure = x + 1.01;
+				int gain = i * 33;
+				int offset = x * 5;
+				fprintf(stderr, "Starting exposure %.3f gain = %d offset = %d...\n", exposure, gain, offset);
+				dsi_set_amp_gain(dsi, gain);
+				dsi_set_amp_offset(dsi, offset);
+				dsi_start_exposure(dsi, exposure);
 				fprintf(stderr, "Reading image...\n");
 				while ((code = dsi_read_image(dsi, (unsigned char*)image, O_NONBLOCK)) != 0) {
 					if (code == EWOULDBLOCK) {
-						fprintf(stderr, "image not ready, sleeping...\n");
-						sleep(1);
+						double time_left = dsi_get_exposure_time_left(dsi);
+						fprintf(stderr, "image not ready, sleeping for %.3f...\n", time_left);
+						usleep((int)(time_left*1000000));
 					} else {
 						fprintf(stderr, "PROBLEMMMM...\n");
 						dsi_abort_exposure(dsi);
 						dsi_reset_camera(dsi);
 						dsi_reset_camera(dsi);
-						dsi_start_exposure(dsi, EXP_TIME);
+						dsi_start_exposure(dsi, exposure);
 					}
 				}
 				snprintf(buffer, 1024, "%s.%04d.pgm", FILE_NAME, i);
