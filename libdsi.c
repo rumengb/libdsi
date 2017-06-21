@@ -990,7 +990,7 @@ int dsicmd_get_version(dsi_camera_t *dsi) {
 }
 
 static void dsicmd_load_status(dsi_camera_t *dsi) {
-	if ((dsi->usb_speed == -1) || (dsi->fw_debug == -1)) {
+	if ((dsi->usb_speed == DSI_USB_SPEED_INVALID) || (dsi->fw_debug == DSI_FW_DEBUG_INVALID)) {
 		int result = dsicmd_command_1(dsi, GET_STATUS);
 		int usb_speed = (result & 0x0ff);
 		int fw_debug  = ((result << 8) & 0x0ff);
@@ -1046,8 +1046,8 @@ static dsi_camera_t *dsicmd_init_dsi(dsi_camera_t *dsi) {
 	dsi->exposure_time    = 10;
 
 	dsi->version.value = -1;
-	dsi->fw_debug  = -1;
-	dsi->usb_speed = -1;
+	dsi->fw_debug  = DSI_FW_DEBUG_INVALID;
+	dsi->usb_speed = DSI_USB_SPEED_INVALID;
 
 	dsi->little_endian_data = 1;
 

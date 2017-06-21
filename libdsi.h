@@ -94,12 +94,14 @@ typedef enum DSI_COMMAND dsi_command_t;
  * this driver only actually supports DSI_USB_SPEED_HIGH.
  */
 enum DSI_USB_SPEED {
+	DSI_USB_SPEED_INVALID = -1,
 	DSI_USB_SPEED_FULL = 0,
 	DSI_USB_SPEED_HIGH = 1,
 };
 
 
 enum DSI_FW_DEBUG {
+	DSI_FW_DEBUG_INVALID = -1,
 	DSI_FW_DEBUG_OFF = 0,
 	DSI_FW_DEBUG_ON  = 1,
 };
