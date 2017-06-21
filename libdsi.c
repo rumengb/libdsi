@@ -737,11 +737,11 @@ static int dsicmd_usb_command(dsi_camera_t *dsi, unsigned char *ibuf, int ibuf_l
 	}
 
 	int actual_length;
-	retcode = libusb_bulk_transfer(dsi->handle, 0x01, (char *) ibuf, ibuf[0], &actual_length, dsi->write_command_timeout);
+	retcode = libusb_bulk_transfer(dsi->handle, 0x01, (unsigned char *) ibuf, ibuf[0], &actual_length, dsi->write_command_timeout);
 	if (retcode < 0)
 		return retcode;
 
-	retcode = libusb_bulk_transfer(dsi->handle, 0x81, obuf, obuf_size, &actual_length, dsi->read_command_timeout);
+	retcode = libusb_bulk_transfer(dsi->handle, 0x81, (unsigned char *)obuf, obuf_size, &actual_length, dsi->read_command_timeout);
 	if (retcode < 0)
 		return retcode;
 
@@ -927,9 +927,9 @@ static int dsicmd_set_eeprom_data(dsi_camera_t *dsi, char *buffer, int start, in
 
 static void dsicmd_get_eeprom_string(dsi_camera_t *dsi, unsigned char *buffer, int start, int length) {
 	int i;
-	dsicmd_get_eeprom_data(dsi, buffer, start, length);
+	dsicmd_get_eeprom_data(dsi, (char *)buffer, start, length);
 	if ((buffer[0] == 0xff) || (buffer[1] == 0xff) || (buffer[2] == 0xff)) {
-		strncpy(buffer, "None", length);
+		strncpy((char *)buffer, "None", length);
 	} else {
 		for (i = 0; i < length-1; i++) buffer[i] = buffer[i+1];
 		buffer[length-1] = '\0';
@@ -1441,7 +1441,7 @@ double dsi_get_temperature(dsi_camera_t *dsi) {
 const char *dsi_get_chip_name(dsi_camera_t *dsi) {
 	if (dsi->chip_name[0] == 0) {
 		memset(dsi->chip_name, 0, 21);
-		dsicmd_get_eeprom_string(dsi, dsi->chip_name, 8, 20);
+		dsicmd_get_eeprom_string(dsi, (unsigned char *)dsi->chip_name, 8, 20);
 	}
 	return dsi->chip_name;
 }
@@ -1470,7 +1470,7 @@ const char *dsi_get_model_name(dsi_camera_t *dsi) {
 const char *dsi_get_camera_name(dsi_camera_t *dsi) {
 	if (dsi->camera_name[0] == 0) {
 		memset(dsi->camera_name, 0, DSI_NAME_LEN);
-		dsicmd_get_eeprom_string(dsi, dsi->camera_name, 0x1c, 0x20);
+		dsicmd_get_eeprom_string(dsi, (unsigned char*)dsi->camera_name, 0x1c, 0x20);
 	}
 	return dsi->camera_name;
 }
@@ -1509,7 +1509,7 @@ const char *dsi_get_serial_number(dsi_camera_t *dsi) {
 }
 
 int dsi_get_identifier(libusb_device *device, char *identifier) {
-	char data[11];
+	uint8_t data[11];
 	int i;
 	data[0]=libusb_get_bus_number(device);
 	/* port munbers will fit in data[] as max(n)=7 */
@@ -1878,7 +1878,7 @@ int dsi_read_image(dsi_camera_t *dsi, unsigned char *buffer, int flags) {
 		status = libusb_bulk_transfer(dsi->handle, 0x86, dsi->read_buffer_even, read_size_even, &actual_length,
 							   3 * dsi->read_image_timeout);
 		if (dsi->log_commands)
-			dsi_log_command_info(dsi, 1, "r 86", read_size_even, dsi->read_buffer_even, 0);
+			dsi_log_command_info(dsi, 1, "r 86", read_size_even, (char *)dsi->read_buffer_even, 0);
 		if (status < 0) {
 			//fprintf(stderr, "libusb_bulk_transfer(%p, 0x86, %p, %d, %d) (even) -> returned %d\n",
 			//		dsi->handle, dsi->read_buffer_even, read_size_even, 2*dsi->read_image_timeout, status);
@@ -1890,7 +1890,7 @@ int dsi_read_image(dsi_camera_t *dsi, unsigned char *buffer, int flags) {
 		status = libusb_bulk_transfer(dsi->handle, 0x86, dsi->read_buffer_odd, read_size_odd, &actual_length,
 							   3 * dsi->read_image_timeout);
 		if (dsi->log_commands)
-			dsi_log_command_info(dsi, 1, "r 86", read_size_odd, dsi->read_buffer_odd, 0);
+			dsi_log_command_info(dsi, 1, "r 86", read_size_odd, (char *)dsi->read_buffer_odd, 0);
 		if (status < 0) {
 			//fprintf(stderr, "libusb_bulk_transfer(%p, 0x86, %p, %d, %d) (odd) -> returned %d\n",
 			//		dsi->handle, dsi->read_buffer_odd, read_size_odd, 2*dsi->read_image_timeout, status);
@@ -1906,7 +1906,7 @@ int dsi_read_image(dsi_camera_t *dsi, unsigned char *buffer, int flags) {
 		status = libusb_bulk_transfer(dsi->handle, 0x86, dsi->read_buffer_odd, read_size_odd, &actual_length,
 							   3 * dsi->read_image_timeout);
 		if (dsi->log_commands)
-			dsi_log_command_info(dsi, 1, "r 86", read_size_odd, dsi->read_buffer_odd, 0);
+			dsi_log_command_info(dsi, 1, "r 86", read_size_odd, (char *)dsi->read_buffer_odd, 0);
 		if (status < 0) {
 			//fprintf(stderr, "libusb_bulk_transfer(%p, 0x86, %p, %d, %d) (odd) -> returned %d\n",
 			//		dsi->handle, dsi->read_buffer_odd, read_size_odd, 2*dsi->read_image_timeout, status);
