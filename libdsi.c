@@ -1072,7 +1072,9 @@ static dsi_camera_t *dsicmd_init_dsi(dsi_camera_t *dsi) {
 
 	/* You would think these could be found by asking the camera, but I can't
 	   find an example of it happening. */
-	if (strcmp(dsi->chip_name, "ICX254AL") == 0) {
+
+	/* IMPORTANT: Compare only 7 or 8 characters as the rest may vary */
+	if (strncmp(dsi->chip_name, "ICX254AL", 8) == 0) {
 		/* DSI Pro I.
 		 * Sony reports the following information:
 		 * Effective pixels: 510 x 492
@@ -1109,7 +1111,7 @@ static dsi_camera_t *dsicmd_init_dsi(dsi_camera_t *dsi) {
 		dsi->pixel_size_x     = 9.6;
 		dsi->pixel_size_y     = 7.5;
 
-	} else if (strcmp(dsi->chip_name, "ICX404AK") == 0) {
+	} else if (strncmp(dsi->chip_name, "ICX404AK", 8) == 0) {
 		/* DSI Color I.
 		 * Sony reports the following information:
 		 * Effective pixels: 510 x 492
@@ -1135,7 +1137,7 @@ static dsi_camera_t *dsicmd_init_dsi(dsi_camera_t *dsi) {
 		dsi->pixel_size_x     = 9.6;
 		dsi->pixel_size_y     = 7.5;
 
-	} else if (strncmp(dsi->chip_name, "ICX429", 6) == 0) {
+	} else if (strncmp(dsi->chip_name, "ICX429A", 7) == 0) {
 		/* DSI Pro/Color II.
 		 * Sony reports the following information:
 		 * Effective pixels: 752 x 582
@@ -1160,7 +1162,7 @@ static dsi_camera_t *dsicmd_init_dsi(dsi_camera_t *dsi) {
 		dsi->has_temperature_sensor = 1;
 		dsi->is_interlaced    = 1;
 
-		if (strcmp(dsi->chip_name, "ICX429AKL") == 0)
+		if (strncmp(dsi->chip_name, "ICX429AK", 8) == 0)
 			dsi->is_color = 1;
 		else /* ICX429ALL */
 			dsi->is_color = 0;
@@ -1171,8 +1173,8 @@ static dsi_camera_t *dsicmd_init_dsi(dsi_camera_t *dsi) {
 		dsicmd_command_2(dsi, AD_WRITE,  88);
 		dsicmd_command_2(dsi, AD_WRITE, 704);
 
-	} else if (strncmp(dsi->chip_name, "ICX285AL", 8) == 0) {
-		/* DSI Pro III.
+	} else if (strncmp(dsi->chip_name, "ICX285A", 7) == 0) {
+		/* DSI Pro/Color III.
 		 * Sony reports the following information:
 		 * Effective pixels: 1360 x 1024
 		 * Total pixels:     1434 x 1050
@@ -1192,6 +1194,11 @@ static dsi_camera_t *dsicmd_init_dsi(dsi_camera_t *dsi) {
 		dsi->pixel_size_x     = 6.45;
 		dsi->pixel_size_y     = 6.45;
 		dsi->has_temperature_sensor = 1;
+
+		if (strncmp(dsi->chip_name, "ICX285AQ", 8) == 0)
+			dsi->is_color = 1;
+		else /* ICX285AL */
+			dsi->is_color = 0;
 
 		dsicmd_command_2(dsi, SET_ROW_COUNT_EVEN, dsi->read_height_even);
 		dsicmd_command_2(dsi, SET_ROW_COUNT_ODD,  dsi->read_height_odd);
@@ -1453,18 +1460,21 @@ const char *dsi_get_model_name(dsi_camera_t *dsi) {
 	if (dsi->model_name[0] == 0) {
 		memset(dsi->chip_name, 0, DSI_NAME_LEN);
 		dsi_get_chip_name(dsi);
-		if (!strncmp(dsi->chip_name, "ICX254AL", DSI_NAME_LEN)) {
+		/* IMPORTANT: compare only 8 characters as the 9th may vary */
+		if (!strncmp(dsi->chip_name, "ICX254AL", 8)) {
 			strncpy(dsi->model_name, "DSI Pro", DSI_NAME_LEN);
-		} else if (!strncmp(dsi->chip_name, "ICX429ALL", DSI_NAME_LEN)) {
+		} else if (!strncmp(dsi->chip_name, "ICX429ALL", 8)) {
 			strncpy(dsi->model_name, "DSI Pro II", DSI_NAME_LEN);
-		} else if (!strncmp(dsi->chip_name, "ICX429AKL", DSI_NAME_LEN)) {
+		} else if (!strncmp(dsi->chip_name, "ICX429AKL", 8)) {
 			strncpy(dsi->model_name, "DSI Color II", DSI_NAME_LEN);
-		} else if (!strncmp(dsi->chip_name, "ICX404AK", DSI_NAME_LEN)) {
+		} else if (!strncmp(dsi->chip_name, "ICX404AK", 8)) {
 			strncpy(dsi->model_name, "DSI Color", DSI_NAME_LEN);
-		} else if (!strncmp(dsi->chip_name, "ICX285AL", 8)) { // Should be 8 as it can vary afer 8th suybol
-		   strncpy(dsi->model_name, "DSI Pro III", DSI_NAME_LEN);
+		} else if (!strncmp(dsi->chip_name, "ICX285AL", 8)) {
+			strncpy(dsi->model_name, "DSI Pro III", DSI_NAME_LEN);
+		} else if (!strncmp(dsi->chip_name, "ICX285AQ", 8)) {
+			strncpy(dsi->model_name, "DSI Color III", DSI_NAME_LEN);
 		} else {
-		   strncpy(dsi->model_name, "DSI Unknown", DSI_NAME_LEN);
+			strncpy(dsi->model_name, "DSI Unknown", DSI_NAME_LEN);
 		}
 	}
 	return dsi->model_name;
