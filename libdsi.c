@@ -334,6 +334,9 @@ const char *dsicmd_lookup_usb_speed_r(enum DSI_USB_SPEED speed, char *buffer, in
 		case DSI_USB_SPEED_HIGH:
 			bufptr = "DSI_USB_SPEED_HIGH";
 			break;
+		case DSI_USB_SPEED_INVALID:
+			bufptr = "DSI_USB_SPEED_INVALID";
+			break;
 	}
 	if (bufptr != 0) {
 		snprintf(buffer, bufsize, "%s", bufptr);
