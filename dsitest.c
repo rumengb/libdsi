@@ -34,7 +34,7 @@ main(int argc, char **argv)
 
 	printf("Cameras found: %d\n", num_cams);
 	for (i = 0; i< num_cams; i++) {
-		printf("Camera: %d  ID: %s\n", num_cams, devices[i]);
+		printf("Camera: %d  ID: %s\n", i, devices[i]);
 	}
 
 	//dsi = dsi_open_camera(devices[0]);
@@ -78,8 +78,8 @@ main(int argc, char **argv)
 			   One idea for the latter will set everything up and verify that the
 			   exposure is running then return ticks remaining. */
 
-			for (i = 0; i < 3; i++) {
-				double exposure = x + 1.01;
+			for (i = 0; i < 7; i++) {
+				double exposure = x/2.0;
 				int gain = i * 33;
 				int offset = x * 5;
 				fprintf(stderr, "Starting exposure %.3f gain = %d offset = %d...\n", exposure, gain, offset);
@@ -93,7 +93,7 @@ main(int argc, char **argv)
 						fprintf(stderr, "image not ready, sleeping for %.3f...\n", time_left);
 						usleep((int)(time_left*1000000));
 					} else {
-						fprintf(stderr, "PROBLEMMMM...\n");
+						fprintf(stderr, "PROBLEMMMM... %d %d\n", code, EWOULDBLOCK);
 						dsi_abort_exposure(dsi);
 						dsi_reset_camera(dsi);
 						dsi_reset_camera(dsi);
