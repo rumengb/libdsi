@@ -20,6 +20,7 @@ typedef struct DSI_CAMERA dsi_camera_t;
 
 #define DSI_ID_LEN 32
 #define DSI_NAME_LEN 32
+#define DSI_BAYER_LEN 5
 #define DSI_MAX_DEVICES 32
 #define NO_TEMP_SENSOR  99999999
 
@@ -210,6 +211,7 @@ const char *dsi_get_model_name(dsi_camera_t *dsi);
 const char *dsi_get_serial_number(dsi_camera_t *dsi);
 const char *dsi_get_camera_name(dsi_camera_t *dsi);
 const char *dsi_set_camera_name(dsi_camera_t *dsi, const char *name);
+const char *dsi_get_bayer_pattern(dsi_camera_t *dsi);
 
 int dsi_start_exposure(dsi_camera_t *dsi, double exptime);
 int dsi_abort_exposure(dsi_camera_t *dsi);

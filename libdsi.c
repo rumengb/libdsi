@@ -46,11 +46,11 @@ struct DSI_CAMERA {
 	int image_height;
 	int image_offset_x;
 	int image_offset_y;
-	int is_color;
 	int has_temperature_sensor;
 	int is_binnable;
 	int is_interlaced;
 	int little_endian_data;
+	char bayer_pattern[DSI_BAYER_LEN];
 
 	double pixel_size_x;
 	double pixel_size_y;
@@ -1053,6 +1053,7 @@ static dsi_camera_t *dsicmd_init_dsi(dsi_camera_t *dsi) {
 	dsi->usb_speed = DSI_USB_SPEED_INVALID;
 
 	dsi->little_endian_data = 1;
+	dsi->bayer_pattern[0] = '\0';
 
 	if (!dsi->is_simulation) {
 		dsicmd_command_1(dsi, PING);
@@ -1104,12 +1105,12 @@ static dsi_camera_t *dsicmd_init_dsi(dsi_camera_t *dsi) {
 		dsi->image_offset_y   = 13;
 
 		dsi->is_binnable      = 0;
-		dsi->is_color         = 0;
 		dsi->is_interlaced    = 1;
 		dsi->has_temperature_sensor = 0;
 
 		dsi->pixel_size_x     = 9.6;
 		dsi->pixel_size_y     = 7.5;
+		dsi->bayer_pattern[0] = '\0';
 
 	} else if (strncmp(dsi->chip_name, "ICX404AK", 8) == 0) {
 		/* DSI Color I.
@@ -1129,13 +1130,14 @@ static dsi_camera_t *dsicmd_init_dsi(dsi_camera_t *dsi) {
 		dsi->image_height     = 488;
 		dsi->image_offset_x   = 23;
 		dsi->image_offset_y   = 17;
+
 		dsi->is_binnable      = 0;
-		dsi->is_color         = 1;
 		dsi->is_interlaced    = 1;
 		dsi->has_temperature_sensor = 0;
 
 		dsi->pixel_size_x     = 9.6;
 		dsi->pixel_size_y     = 7.5;
+		strncpy(dsi->bayer_pattern,"CYMG", DSI_BAYER_LEN);
 
 	} else if (strncmp(dsi->chip_name, "ICX429A", 7) == 0) {
 		/* DSI Pro/Color II.
@@ -1163,9 +1165,9 @@ static dsi_camera_t *dsicmd_init_dsi(dsi_camera_t *dsi) {
 		dsi->is_interlaced    = 1;
 
 		if (strncmp(dsi->chip_name, "ICX429AK", 8) == 0)
-			dsi->is_color = 1;
+			strncpy(dsi->bayer_pattern,"CYMG", DSI_BAYER_LEN);
 		else /* ICX429ALL */
-			dsi->is_color = 0;
+			dsi->bayer_pattern[0] = '\0';
 
 		/* FIXME: Don't know if these are B&W specific or not. */
 		dsicmd_command_2(dsi, SET_ROW_COUNT_EVEN, dsi->read_height_even);
@@ -1180,7 +1182,6 @@ static dsi_camera_t *dsicmd_init_dsi(dsi_camera_t *dsi) {
 		 * Total pixels:     1434 x 1050
 		 */
 
-		dsi->is_color         = 0;
 		dsi->is_interlaced    = 0;
 		dsi->read_width       = 1434;
 		dsi->read_height_even = 0;
@@ -1196,9 +1197,9 @@ static dsi_camera_t *dsicmd_init_dsi(dsi_camera_t *dsi) {
 		dsi->has_temperature_sensor = 1;
 
 		if (strncmp(dsi->chip_name, "ICX285AQ", 8) == 0)
-			dsi->is_color = 1;
+			strncpy(dsi->bayer_pattern,"RGGB", DSI_BAYER_LEN);
 		else /* ICX285AL */
-			dsi->is_color = 0;
+			dsi->bayer_pattern[0] = '\0';
 
 		dsicmd_command_2(dsi, SET_ROW_COUNT_EVEN, dsi->read_height_even);
 		dsicmd_command_2(dsi, SET_ROW_COUNT_ODD,  dsi->read_height_odd);
@@ -1478,6 +1479,10 @@ const char *dsi_get_model_name(dsi_camera_t *dsi) {
 		}
 	}
 	return dsi->model_name;
+}
+
+const char *dsi_get_bayer_pattern(dsi_camera_t *dsi) {
+	return dsi->bayer_pattern;
 }
 
 const char *dsi_get_camera_name(dsi_camera_t *dsi) {

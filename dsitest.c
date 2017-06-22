@@ -56,6 +56,7 @@ main(int argc, char **argv)
 		fprintf(stderr, "dsi_get_camera_name(dsi)   = %s\n", dsi_get_camera_name(dsi));
 		fprintf(stderr, "dsi_get_model_name(dsi)    = %s\n", dsi_get_model_name(dsi));
 		fprintf(stderr, "dsi_get_chip_name(dsi)     = %s\n", dsi_get_chip_name(dsi));
+		fprintf(stderr, "dsi_get_bayer_pattern(dsi) = %s\n", dsi_get_bayer_pattern(dsi));
 		fprintf(stderr, "dsi_get_serial_number(dsi) = %s\n", dsi_get_serial_number(dsi));
 		fprintf(stderr, "dsi_get_amp_gain(dsi)      = %d\n", dsi_get_amp_gain(dsi));
 		fprintf(stderr, "dsi_get_amp_offset(dsi)    = %d\n", dsi_get_amp_offset(dsi));
