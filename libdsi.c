@@ -65,6 +65,7 @@ struct DSI_CAMERA {
 
 	enum DSI_FW_DEBUG fw_debug;
 	enum DSI_USB_SPEED usb_speed;
+	enum DSI_BIN_MODE bin_mode;
 
 	union {
 		int value;
@@ -1054,6 +1055,7 @@ static dsi_camera_t *dsicmd_init_dsi(dsi_camera_t *dsi) {
 
 	dsi->little_endian_data = 1;
 	dsi->bayer_pattern[0] = '\0';
+	dsi->bin_mode = BIN1X1;
 
 	if (!dsi->is_simulation) {
 		dsicmd_command_1(dsi, PING);
@@ -1162,6 +1164,7 @@ static dsi_camera_t *dsicmd_init_dsi(dsi_camera_t *dsi) {
 		dsi->pixel_size_x     = 8.6;
 		dsi->pixel_size_y     = 8.3;
 		dsi->has_temperature_sensor = 1;
+		dsi->is_binnable      = 0;
 		dsi->is_interlaced    = 1;
 
 		if (strncmp(dsi->chip_name, "ICX429AK", 8) == 0)
@@ -1182,6 +1185,7 @@ static dsi_camera_t *dsicmd_init_dsi(dsi_camera_t *dsi) {
 		 * Total pixels:     1434 x 1050
 		 */
 
+		dsi->is_binnable      = 1;
 		dsi->is_interlaced    = 0;
 		dsi->read_width       = 1434;
 		dsi->read_height_even = 0;
@@ -1329,28 +1333,43 @@ static unsigned char *dsicmd_decode_image(dsi_camera_t *dsi, unsigned char *buff
 
 	int xpix, ypix, outpos;
 	int is_odd_row, row_start;
+	int read_width, image_width, image_height, image_offset_x, image_offset_y;
 
 	/* FIXME: This method should really only be called if the camera is an
 	   post-imaging state. */
 
 	if (buffer == NULL) return NULL;
 
+	if (dsi->bin_mode == BIN2X2) {
+		read_width       = dsi->read_width / 2;
+		image_width      = dsi->image_width / 2;
+		image_height     = dsi->image_height / 2;
+		image_offset_x   = dsi->image_offset_x / 2;
+		image_offset_y   = dsi->image_offset_y / 2;
+	} else {
+		read_width       = dsi->read_width;
+		image_width      = dsi->image_width;
+		image_height     = dsi->image_height;
+		image_offset_x   = dsi->image_offset_x;
+		image_offset_y   = dsi->image_offset_y;
+    }
+
 	outpos = 0;
 	if (dsi->is_interlaced) {
-		for (ypix = 0; ypix < dsi->image_height; ypix++) {
+		for (ypix = 0; ypix < image_height; ypix++) {
 			int ixypos;
 			/* The odd-even interlacing means that we advance the row start offset
 			   every other pass through the loop.  It is the same offset on each
 			   of those two passes, but we read from a different buffer. */
-			is_odd_row = (ypix + dsi->image_offset_y) % 2;
-			row_start  = dsi->read_width * ((ypix + dsi->image_offset_y) / 2);
-			ixypos = 2 * (row_start + dsi->image_offset_x);
+			is_odd_row = (ypix + image_offset_y) % 2;
+			row_start  = read_width * ((ypix + image_offset_y) / 2);
+			ixypos = 2 * (row_start + image_offset_x);
 			/*
 			  fprintf(stderr, "starting image row %d, outpos=%d, is_odd_row=%d, row_start=%d, ixypos=%d\n",
 			  ypix, outpos, is_odd_row, row_start, ixypos);
 			*/
 			if (dsi->little_endian_data) {
-				for (xpix = 0; xpix < dsi->image_width; xpix++) {
+				for (xpix = 0; xpix < image_width; xpix++) {
 					if (is_odd_row) { /* invert bytes as camera givers big endian */
 						buffer[outpos++] = dsi->read_buffer_odd[ixypos+1];
 						buffer[outpos++] = dsi->read_buffer_odd[ixypos];
@@ -1362,40 +1381,40 @@ static unsigned char *dsicmd_decode_image(dsi_camera_t *dsi, unsigned char *buff
 				}
 			} else { /* just copy data as camera givers big endian */
 				if (is_odd_row) {
-					memcpy(buffer + outpos, dsi->read_buffer_odd + ixypos, dsi->image_width * dsi->read_bpp);
+					memcpy(buffer + outpos, dsi->read_buffer_odd + ixypos, image_width * dsi->read_bpp);
 				} else {
-					memcpy(buffer + outpos, dsi->read_buffer_even + ixypos, dsi->image_width * dsi->read_bpp);
+					memcpy(buffer + outpos, dsi->read_buffer_even + ixypos, image_width * dsi->read_bpp);
 				}
-				outpos += dsi->image_width * dsi->read_bpp;
+				outpos += image_width * dsi->read_bpp;
 			}
 		}
 	} else { /* Non interlaced -> DSI III*/
 		if (dsi->little_endian_data) { /* invert bytes as camera givers big endian */
-			for (ypix = 0; ypix < dsi->image_height; ypix++) {
+			for (ypix = 0; ypix < image_height; ypix++) {
 				int ixypos;
-				row_start  = dsi->read_width * (ypix + dsi->image_offset_y);
-				ixypos = 2 * (row_start + dsi->image_offset_x);
+				row_start  = read_width * (ypix + image_offset_y);
+				ixypos = 2 * (row_start + image_offset_x);
 				/*
 				  fprintf(stderr, "starting image row %d, outpos=%d, is_odd_row=%d, row_start=%d, ixypos=%d\n",
 				  ypix, outpos, is_odd_row, row_start, ixypos);
 				*/
-				for (xpix = 0; xpix < dsi->image_width; xpix++) {
+				for (xpix = 0; xpix < image_width; xpix++) {
 					buffer[outpos++] = dsi->read_buffer_odd[ixypos+1];
 					buffer[outpos++] = dsi->read_buffer_odd[ixypos];
 					ixypos += 2;
 				}
 			}
 		} else {  /* just copy data as camera givers big endian */
-			for (ypix = 0; ypix < dsi->image_height; ypix++) {
+			for (ypix = 0; ypix < image_height; ypix++) {
 				int ixypos;
-				row_start  = dsi->read_width * (ypix + dsi->image_offset_y);
-				ixypos = 2 * (row_start + dsi->image_offset_x);
+				row_start  = read_width * (ypix + image_offset_y);
+				ixypos = 2 * (row_start + image_offset_x);
 				/*
 				  fprintf(stderr, "starting image row %d, outpos=%d, is_odd_row=%d, row_start=%d, ixypos=%d\n",
 				  ypix, outpos, is_odd_row, row_start, ixypos);
 				 */
 
-				for (xpix = 0; xpix < dsi->image_width; xpix++) {
+				for (xpix = 0; xpix < image_width; xpix++) {
 					buffer[outpos++] = dsi->read_buffer_odd[ixypos++];
 					buffer[outpos++] = dsi->read_buffer_odd[ixypos++];
 				}
@@ -1443,12 +1462,20 @@ int dsi_get_amp_offset(dsi_camera_t *dsi) {
 	return dsi->amp_offset_pct;
 }
 
-int dsi_get_image_width(dsi_camera_t *dsi) {
+int dsi_get_frame_width(dsi_camera_t *dsi) {
 	return dsi->image_width;
 }
 
-int dsi_get_image_height(dsi_camera_t *dsi) {
+int dsi_get_frame_height(dsi_camera_t *dsi) {
 	return dsi->image_height;
+}
+
+int dsi_get_image_width(dsi_camera_t *dsi) {
+	return dsi->image_width / dsi->bin_mode;
+}
+
+int dsi_get_image_height(dsi_camera_t *dsi) {
+	return dsi->image_height / dsi->bin_mode;
 }
 
 double dsi_get_pixel_width(dsi_camera_t *dsi) {
@@ -1540,6 +1567,36 @@ const char *dsi_get_serial_number(dsi_camera_t *dsi) {
 		}
 	}
 	return dsi->serial_number;
+}
+
+int dsicmd_set_binning(dsi_camera_t *dsi, enum DSI_BIN_MODE bin) {
+	unsigned int read_height_odd = dsi->read_height_odd / bin;
+	int res = 0;
+	if (dsi->is_binnable) {
+		res = dsicmd_command_1(dsi, GET_EXP_MODE);
+		res = dsicmd_command_2(dsi, SET_EXP_MODE, bin);
+		res = dsicmd_command_2(dsi, SET_ROW_COUNT_ODD, read_height_odd);
+	}
+	return res;
+}
+
+enum DSI_BIN_MODE dsi_get_max_binning(dsi_camera_t *dsi) {
+	if (dsi->is_binnable) return BIN2X2;
+	else return BIN1X1;
+}
+
+int dsi_set_binning(dsi_camera_t *dsi, enum DSI_BIN_MODE bin) {
+	if (dsi->is_binnable) {
+		dsi->bin_mode = bin;
+		return 0;
+	}
+
+	dsi->bin_mode = BIN1X1;
+	return -1;
+}
+
+enum DSI_BIN_MODE dsi_get_binning(dsi_camera_t *dsi) {
+	return dsi->bin_mode;
 }
 
 int dsi_get_identifier(libusb_device *device, char *identifier) {
@@ -1773,6 +1830,8 @@ int dsi_start_exposure(dsi_camera_t *dsi, double exptime) {
 		offset = (int)(255 * offset / 50.0);
 	}
 
+	if (dsi->is_binnable) dsicmd_set_binning(dsi, dsi->bin_mode);
+
 	if (dsi->is_interlaced) {
 		dsicmd_set_gain(dsi, 0);
 		dsicmd_set_offset(dsi, 0);
@@ -1857,6 +1916,7 @@ int dsi_reset_camera(dsi_camera_t *dsi) {
 int dsi_read_image(dsi_camera_t *dsi, unsigned char *buffer, int flags) {
 	int status;
 	int ticks_left, read_size_odd, read_size_even;
+	int read_width, read_height_even, read_height_odd;
 
 	if (dsi == NULL || buffer == NULL) return EINVAL;
 
@@ -1904,11 +1964,21 @@ int dsi_read_image(dsi_camera_t *dsi, unsigned char *buffer, int flags) {
 		*/
 	}
 
+	if (dsi->bin_mode == BIN2X2) {
+		read_width       = dsi->read_width / 2;
+		read_height_even = dsi->read_height_even / 2;
+		read_height_odd  = dsi->read_height_odd / 2;
+	} else {
+		read_width       = dsi->read_width;
+		read_height_even = dsi->read_height_even;
+		read_height_odd  = dsi->read_height_odd;
+    }
+
 	dsicmd_set_gain(dsi, (int)(63 * dsi->amp_gain_pct / 100.0));
 
 	int actual_length;
 	if (dsi->is_interlaced) {
-		read_size_even = dsi->read_bpp * dsi->read_width * dsi->read_height_even;
+		read_size_even = dsi->read_bpp * read_width * read_height_even;
 		status = libusb_bulk_transfer(dsi->handle, 0x86, dsi->read_buffer_even, read_size_even, &actual_length,
 							   3 * dsi->read_image_timeout);
 		if (dsi->log_commands)
@@ -1920,7 +1990,7 @@ int dsi_read_image(dsi_camera_t *dsi, unsigned char *buffer, int flags) {
 			return EIO;
 		}
 
-		read_size_odd = dsi->read_bpp * dsi->read_width * dsi->read_height_odd;
+		read_size_odd = dsi->read_bpp * read_width * read_height_odd;
 		status = libusb_bulk_transfer(dsi->handle, 0x86, dsi->read_buffer_odd, read_size_odd, &actual_length,
 							   3 * dsi->read_image_timeout);
 		if (dsi->log_commands)
@@ -1936,7 +2006,7 @@ int dsi_read_image(dsi_camera_t *dsi, unsigned char *buffer, int flags) {
 		if (exposure_ticks >= 10000) {
 			dsicmd_set_vdd_mode(dsi, DSI_VDD_MODE_ON);
 		}
-		read_size_odd = dsi->read_bpp * dsi->read_width * dsi->read_height_odd;
+		read_size_odd = dsi->read_bpp * read_width * read_height_odd;
 		status = libusb_bulk_transfer(dsi->handle, 0x86, dsi->read_buffer_odd, read_size_odd, &actual_length,
 							   3 * dsi->read_image_timeout);
 		if (dsi->log_commands)
@@ -1948,6 +2018,9 @@ int dsi_read_image(dsi_camera_t *dsi, unsigned char *buffer, int flags) {
 			return EIO;
 		}
 	}
+
+	/* Set binning to 1x1 after reading the data */
+	if (dsi->is_binnable) dsicmd_set_binning(dsi, BIN1X1);
 
 	dsicmd_set_gain(dsi, 0);
 	dsi->imaging_state = DSI_IMAGE_IDLE;
